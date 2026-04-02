@@ -370,6 +370,57 @@ export class GitWorktree {
     }
   }
 
+  static async listBranches(cwd?: string): Promise<{ name: string; isRemote: boolean; lastCommitDate: string }[]> {
+    const dir = cwd ?? (Bun as any).cwd;
+    const cacheKey = `branches:${dir}`;
+    const cached = getCached<{ name: string; isRemote: boolean; lastCommitDate: string }[]>(cacheKey);
+    if (cached) return cached;
+
+    const [localOutput, remoteOutput] = await Promise.all([
+      this.run(["for-each-ref", "--sort=-committerdate", "--format=%(refname:short)\x1f%(committerdate:relative)", "refs/heads/"], dir).catch(() => ""),
+      this.run(["for-each-ref", "--sort=-committerdate", "--format=%(refname:short)\x1f%(committerdate:relative)", "refs/remotes/"], dir).catch(() => ""),
+    ]);
+
+    const branches: { name: string; isRemote: boolean; lastCommitDate: string }[] = [];
+
+    for (const line of localOutput.split("\n").filter(Boolean)) {
+      const [name, date] = line.split("\x1f");
+      branches.push({ name: name ?? "", isRemote: false, lastCommitDate: date ?? "" });
+    }
+
+    for (const line of remoteOutput.split("\n").filter(Boolean)) {
+      const [fullName, date] = line.split("\x1f");
+      if (!fullName || fullName.endsWith("/HEAD")) continue;
+      const name = fullName.replace(/^[^/]+\//, "");
+      if (branches.some((b) => b.name === name)) continue;
+      branches.push({ name, isRemote: true, lastCommitDate: date ?? "" });
+    }
+
+    return setCache(cacheKey, branches);
+  }
+
+  static async diffBetween(
+    refA: string,
+    refB: string,
+    opts?: { stat?: boolean; nameOnly?: boolean },
+    cwd?: string,
+  ): Promise<string> {
+    const args = ["diff"];
+    if (opts?.stat) args.push("--stat");
+    if (opts?.nameOnly) args.push("--name-only");
+    args.push(refA, refB);
+    return this.run(args, cwd);
+  }
+
+  static async getWorktreeLastActivity(worktreePath: string): Promise<Date | null> {
+    try {
+      const output = await this.run(["log", "-1", "--format=%ci"], worktreePath);
+      return output ? new Date(output) : null;
+    } catch {
+      return null;
+    }
+  }
+
   static async setUpstream(branch: string, remote?: string, cwd?: string): Promise<void> {
     const effectiveRemote = remote ?? (await this.getDefaultRemote(cwd));
     const dir = cwd ?? (Bun as any).cwd;

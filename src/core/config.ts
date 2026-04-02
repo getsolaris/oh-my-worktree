@@ -17,6 +17,7 @@ export interface RepoDefaults {
   postCreate?: string[];
   postRemove?: string[];
   autoUpstream?: boolean;
+  sharedDeps?: SharedDepsConfig;
 }
 
 export interface MonorepoHookConfig {
@@ -33,6 +34,28 @@ export interface MonorepoConfig {
   hooks?: MonorepoHookConfig[];
 }
 
+export interface TemplateConfig {
+  worktreeDir?: string;
+  copyFiles?: string[];
+  linkFiles?: string[];
+  postCreate?: string[];
+  postRemove?: string[];
+  autoUpstream?: boolean;
+  base?: string;
+}
+
+export interface LifecycleConfig {
+  autoCleanMerged?: boolean;
+  staleAfterDays?: number;
+  maxWorktrees?: number;
+}
+
+export interface SharedDepsConfig {
+  strategy?: "hardlink" | "symlink" | "copy";
+  paths?: string[];
+  invalidateOn?: string[];
+}
+
 export interface RepoConfig extends RepoDefaults {
   path: string;
   monorepo?: MonorepoConfig;
@@ -43,10 +66,13 @@ export interface OmwConfig {
   defaults?: RepoDefaults;
   repos?: RepoConfig[];
   theme?: string;
+  templates?: Record<string, TemplateConfig>;
+  lifecycle?: LifecycleConfig;
 }
 
-export interface ResolvedRepoConfig extends Required<RepoDefaults> {
+export interface ResolvedRepoConfig extends Omit<Required<RepoDefaults>, "sharedDeps"> {
   monorepo?: MonorepoConfig;
+  sharedDeps?: SharedDepsConfig;
 }
 
 export interface ValidationError {
@@ -76,6 +102,7 @@ const DEFAULT_RESOLVED: ResolvedRepoConfig = {
   postCreate: [],
   postRemove: [],
   autoUpstream: true,
+  sharedDeps: undefined,
 };
 
 function validateStringArray(
@@ -117,7 +144,7 @@ export function validateConfig(data: unknown): ValidationError[] {
     });
   }
 
-  const validRootKeys = new Set(["version", "defaults", "repos", "$schema", "theme"]);
+  const validRootKeys = new Set(["version", "defaults", "repos", "$schema", "theme", "templates", "lifecycle"]);
   for (const key of Object.keys(obj)) {
     if (!validRootKeys.has(key)) {
       errors.push({ field: key, message: `Unknown field '${key}'` });
@@ -136,6 +163,7 @@ export function validateConfig(data: unknown): ValidationError[] {
         "postCreate",
         "postRemove",
         "autoUpstream",
+        "sharedDeps",
       ]);
 
       for (const key of Object.keys(d)) {
@@ -160,6 +188,14 @@ export function validateConfig(data: unknown): ValidationError[] {
       ] as const) {
         if (arrayKey in d) {
           validateStringArray(d[arrayKey], `defaults.${arrayKey}`, errors);
+        }
+      }
+
+      if ("sharedDeps" in d && d.sharedDeps !== undefined) {
+        if (typeof d.sharedDeps !== "object" || d.sharedDeps === null) {
+          errors.push({ field: "defaults.sharedDeps", message: "Must be an object" });
+        } else {
+          validateSharedDeps(d.sharedDeps as Record<string, unknown>, "defaults.sharedDeps", errors);
         }
       }
     }
@@ -188,6 +224,7 @@ export function validateConfig(data: unknown): ValidationError[] {
           "postRemove",
           "autoUpstream",
           "monorepo",
+          "sharedDeps",
         ]);
 
         for (const key of Object.keys(r)) {
@@ -222,6 +259,14 @@ export function validateConfig(data: unknown): ValidationError[] {
         ] as const) {
           if (arrayKey in r) {
             validateStringArray(r[arrayKey], `${fieldPrefix}.${arrayKey}`, errors);
+          }
+        }
+
+        if ("sharedDeps" in r && r.sharedDeps !== undefined) {
+          if (typeof r.sharedDeps !== "object" || r.sharedDeps === null) {
+            errors.push({ field: `${fieldPrefix}.sharedDeps`, message: "Must be an object" });
+          } else {
+            validateSharedDeps(r.sharedDeps as Record<string, unknown>, `${fieldPrefix}.sharedDeps`, errors);
           }
         }
 
@@ -276,7 +321,87 @@ export function validateConfig(data: unknown): ValidationError[] {
     }
   }
 
+  if ("templates" in obj && obj.templates !== undefined) {
+    if (typeof obj.templates !== "object" || obj.templates === null || Array.isArray(obj.templates)) {
+      errors.push({ field: "templates", message: "Must be an object (key-value map)" });
+    } else {
+      const templates = obj.templates as Record<string, unknown>;
+      const validTemplateKeys = new Set([
+        "worktreeDir", "copyFiles", "linkFiles", "postCreate", "postRemove", "autoUpstream", "base",
+      ]);
+
+      for (const [name, tmpl] of Object.entries(templates)) {
+        const prefix = `templates.${name}`;
+        if (typeof tmpl !== "object" || tmpl === null) {
+          errors.push({ field: prefix, message: "Must be an object" });
+          continue;
+        }
+        const t = tmpl as Record<string, unknown>;
+        for (const key of Object.keys(t)) {
+          if (!validTemplateKeys.has(key)) {
+            errors.push({ field: `${prefix}.${key}`, message: `Unknown field '${key}'` });
+          }
+        }
+        if ("worktreeDir" in t && typeof t.worktreeDir !== "string") {
+          errors.push({ field: `${prefix}.worktreeDir`, message: "Must be a string" });
+        }
+        if ("base" in t && typeof t.base !== "string") {
+          errors.push({ field: `${prefix}.base`, message: "Must be a string" });
+        }
+        if ("autoUpstream" in t && typeof t.autoUpstream !== "boolean") {
+          errors.push({ field: `${prefix}.autoUpstream`, message: "Must be a boolean" });
+        }
+        for (const arrayKey of ["copyFiles", "linkFiles", "postCreate", "postRemove"] as const) {
+          if (arrayKey in t) {
+            validateStringArray(t[arrayKey], `${prefix}.${arrayKey}`, errors);
+          }
+        }
+      }
+    }
+  }
+
+  if ("lifecycle" in obj && obj.lifecycle !== undefined) {
+    if (typeof obj.lifecycle !== "object" || obj.lifecycle === null) {
+      errors.push({ field: "lifecycle", message: "Must be an object" });
+    } else {
+      const lc = obj.lifecycle as Record<string, unknown>;
+      const validLifecycleKeys = new Set(["autoCleanMerged", "staleAfterDays", "maxWorktrees"]);
+      for (const key of Object.keys(lc)) {
+        if (!validLifecycleKeys.has(key)) {
+          errors.push({ field: `lifecycle.${key}`, message: `Unknown field '${key}'` });
+        }
+      }
+      if ("autoCleanMerged" in lc && typeof lc.autoCleanMerged !== "boolean") {
+        errors.push({ field: "lifecycle.autoCleanMerged", message: "Must be a boolean" });
+      }
+      if ("staleAfterDays" in lc && (typeof lc.staleAfterDays !== "number" || lc.staleAfterDays < 1)) {
+        errors.push({ field: "lifecycle.staleAfterDays", message: "Must be a positive number" });
+      }
+      if ("maxWorktrees" in lc && (typeof lc.maxWorktrees !== "number" || lc.maxWorktrees < 1)) {
+        errors.push({ field: "lifecycle.maxWorktrees", message: "Must be a positive number" });
+      }
+    }
+  }
+
   return errors;
+}
+
+function validateSharedDeps(obj: Record<string, unknown>, prefix: string, errors: ValidationError[]): void {
+  const validKeys = new Set(["strategy", "paths", "invalidateOn"]);
+  for (const key of Object.keys(obj)) {
+    if (!validKeys.has(key)) {
+      errors.push({ field: `${prefix}.${key}`, message: `Unknown field '${key}'` });
+    }
+  }
+  if ("strategy" in obj && !["hardlink", "symlink", "copy"].includes(obj.strategy as string)) {
+    errors.push({ field: `${prefix}.strategy`, message: 'Must be "hardlink", "symlink", or "copy"' });
+  }
+  if ("paths" in obj) {
+    validateStringArray(obj.paths, `${prefix}.paths`, errors);
+  }
+  if ("invalidateOn" in obj) {
+    validateStringArray(obj.invalidateOn, `${prefix}.invalidateOn`, errors);
+  }
 }
 
 export function loadConfig(overridePath?: string): OmwConfig {
@@ -326,6 +451,7 @@ export function getRepoConfig(config: OmwConfig, repoPath: string): ResolvedRepo
     autoUpstream:
       repoOverride?.autoUpstream ?? config.defaults?.autoUpstream ?? DEFAULT_RESOLVED.autoUpstream,
     monorepo: repoOverride?.monorepo,
+    sharedDeps: repoOverride?.sharedDeps ?? config.defaults?.sharedDeps,
   };
 }
 
@@ -358,6 +484,33 @@ export function initConfig(overridePath?: string): string {
 
   writeAtomically(configPath, `${JSON.stringify(DEFAULT_CONFIG, null, 2)}\n`);
   return configPath;
+}
+
+export function resolveTemplate(
+  config: OmwConfig,
+  templateName: string,
+): TemplateConfig | undefined {
+  return config.templates?.[templateName];
+}
+
+export function mergeTemplateWithRepo(
+  repoConfig: ResolvedRepoConfig,
+  template: TemplateConfig,
+): ResolvedRepoConfig {
+  return {
+    worktreeDir: template.worktreeDir ?? repoConfig.worktreeDir,
+    copyFiles: template.copyFiles ?? repoConfig.copyFiles,
+    linkFiles: template.linkFiles ?? repoConfig.linkFiles,
+    postCreate: template.postCreate ?? repoConfig.postCreate,
+    postRemove: template.postRemove ?? repoConfig.postRemove,
+    autoUpstream: template.autoUpstream ?? repoConfig.autoUpstream,
+    monorepo: repoConfig.monorepo,
+    sharedDeps: repoConfig.sharedDeps,
+  };
+}
+
+export function getTemplateNames(config: OmwConfig): string[] {
+  return Object.keys(config.templates ?? {});
 }
 
 export function writeAtomically(filePath: string, content: string): void {

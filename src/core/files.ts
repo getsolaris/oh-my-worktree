@@ -1,14 +1,18 @@
 import * as fs from "fs";
-import { join, resolve } from "path";
+import { join, resolve, dirname } from "path";
 
 interface FsSyncCompat {
   copyFileSync(src: string, dst: string): void;
   existsSync(path: string): boolean;
   symlinkSync(target: string, path: string): void;
   unlinkSync(path: string): void;
+  linkSync(existingPath: string, newPath: string): void;
+  readdirSync(path: string, options?: { recursive?: boolean; withFileTypes?: boolean }): any[];
+  statSync(path: string, options?: { throwIfNoEntry?: boolean }): any | undefined;
+  mkdirSync(path: string, options?: { recursive?: boolean }): void;
 }
 
-const { copyFileSync, existsSync, symlinkSync, unlinkSync } = fs as unknown as FsSyncCompat;
+const { copyFileSync, existsSync, symlinkSync, unlinkSync, linkSync, readdirSync, statSync, mkdirSync } = fs as unknown as FsSyncCompat;
 
 export interface FilesResult {
   copied: string[];
@@ -91,6 +95,139 @@ export function linkFiles(
   }
 
   return result;
+}
+
+import type { SharedDepsConfig } from "./config.ts";
+
+export function hardlinkDir(sourceDir: string, targetDir: string): { linked: number; errors: string[] } {
+  let linked = 0;
+  const errors: string[] = [];
+
+  const srcResolved = resolve(sourceDir);
+  const dstResolved = resolve(targetDir);
+
+  if (!existsSync(srcResolved)) {
+    return { linked: 0, errors: [`Source not found: ${sourceDir}`] };
+  }
+
+  const srcStat = statSync(srcResolved, { throwIfNoEntry: false });
+  if (!srcStat || !srcStat.isDirectory()) {
+    try {
+      mkdirSync(dirname(dstResolved), { recursive: true });
+      linkSync(srcResolved, dstResolved);
+      return { linked: 1, errors: [] };
+    } catch (e) {
+      return { linked: 0, errors: [`Failed to hardlink ${sourceDir}: ${(e as Error).message}`] };
+    }
+  }
+
+  if (!existsSync(dstResolved)) {
+    mkdirSync(dstResolved, { recursive: true });
+  }
+
+  try {
+    const entries = readdirSync(srcResolved, { withFileTypes: true });
+    for (const entry of entries) {
+      const srcPath = join(srcResolved, entry.name);
+      const dstPath = join(dstResolved, entry.name);
+
+      if (entry.isDirectory()) {
+        const sub = hardlinkDir(srcPath, dstPath);
+        linked += sub.linked;
+        errors.push(...sub.errors);
+      } else if (entry.isFile()) {
+        if (existsSync(dstPath)) continue;
+        try {
+          linkSync(srcPath, dstPath);
+          linked++;
+        } catch (e) {
+          try {
+            copyFileSync(srcPath, dstPath);
+            linked++;
+          } catch (e2) {
+            errors.push(`Failed to link/copy ${entry.name}: ${(e2 as Error).message}`);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    errors.push(`Failed to read directory ${sourceDir}: ${(e as Error).message}`);
+  }
+
+  return { linked, errors };
+}
+
+export function applySharedDeps(
+  sourceDir: string,
+  targetDir: string,
+  config: SharedDepsConfig,
+): FilesResult {
+  const result: FilesResult = { copied: [], linked: [], skipped: [], warnings: [] };
+  const paths = config.paths ?? [];
+  const strategy = config.strategy ?? "symlink";
+
+  for (const depPath of paths) {
+    const src = join(resolve(sourceDir), depPath);
+    const dst = join(resolve(targetDir), depPath);
+
+    if (!existsSync(src)) {
+      result.skipped.push(depPath);
+      result.warnings.push(`Source not found, skipping shared dep: ${depPath}`);
+      continue;
+    }
+
+    if (existsSync(dst)) {
+      result.skipped.push(depPath);
+      continue;
+    }
+
+    try {
+      if (strategy === "symlink") {
+        symlinkSync(src, dst);
+        result.linked.push(depPath);
+      } else if (strategy === "hardlink") {
+        const hr = hardlinkDir(src, dst);
+        if (hr.linked > 0) result.linked.push(depPath);
+        for (const e of hr.errors) result.warnings.push(e);
+      } else {
+        copyFileSync(src, dst);
+        result.copied.push(depPath);
+      }
+    } catch (e) {
+      result.skipped.push(depPath);
+      result.warnings.push(`Failed to share dep ${depPath}: ${(e as Error).message}`);
+    }
+  }
+
+  return result;
+}
+
+export function shouldInvalidateDeps(
+  sourceDir: string,
+  targetDir: string,
+  config: SharedDepsConfig,
+): string[] {
+  const invalidateOn = config.invalidateOn ?? [];
+  const changed: string[] = [];
+
+  for (const file of invalidateOn) {
+    const srcPath = join(resolve(sourceDir), file);
+    const dstPath = join(resolve(targetDir), file);
+
+    const srcStat = statSync(srcPath, { throwIfNoEntry: false });
+    const dstStat = statSync(dstPath, { throwIfNoEntry: false });
+
+    if (!srcStat || !dstStat) {
+      if (srcStat || dstStat) changed.push(file);
+      continue;
+    }
+
+    if (srcStat.mtimeMs !== dstStat.mtimeMs || srcStat.size !== dstStat.size) {
+      changed.push(file);
+    }
+  }
+
+  return changed;
 }
 
 /**

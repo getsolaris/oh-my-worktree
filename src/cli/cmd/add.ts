@@ -3,11 +3,12 @@ import { basename, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { GitWorktree } from "../../core/git.ts";
 import { GitError } from "../../core/types.ts";
-import { loadConfig, getRepoConfig, expandTemplate } from "../../core/config.ts";
+import { loadConfig, getRepoConfig, expandTemplate, resolveTemplate, mergeTemplateWithRepo } from "../../core/config.ts";
 import { executeHooks, HookError, HookTimeoutError } from "../../core/hooks.ts";
 import { matchHooksForFocus, executeGlobHooks } from "../../core/glob-hooks.ts";
-import { copyFiles, linkFiles } from "../../core/files.ts";
+import { copyFiles, linkFiles, applySharedDeps } from "../../core/files.ts";
 import { writeFocus } from "../../core/focus.ts";
+import { writePRMeta } from "../../core/pr.ts";
 import { validateFocusPaths } from "../../core/monorepo.ts";
 
 const cmd: CommandModule = {
@@ -39,15 +40,78 @@ const cmd: CommandModule = {
         alias: "f",
         describe: "Focus packages for monorepo (comma or space separated paths)",
         string: true,
+      })
+      .option("template", {
+        type: "string",
+        alias: "t",
+        describe: "Use a named template from config",
+      })
+      .option("pr", {
+        type: "number",
+        describe: "Create worktree from a GitHub PR number (requires gh CLI)",
       }),
   handler: async (argv) => {
-    const branch = argv.branch as string;
+    let branch = argv.branch as string;
+    const prNumber = argv.pr as number | undefined;
     const mainRepoPath = await GitWorktree.getMainRepoPath().catch(() => process.cwd());
     const repoName = basename(mainRepoPath);
+
+    // PR integration: resolve PR number to branch name via gh CLI
+    if (prNumber) {
+      try {
+        const proc = (Bun as any).spawn(["gh", "pr", "view", String(prNumber), "--json", "headRefName", "--jq", ".headRefName"], {
+          cwd: mainRepoPath,
+          stdout: "pipe",
+          stderr: "pipe",
+        });
+        const [stdout, stderr, exitCode] = await Promise.all([
+          new Response(proc.stdout).text(),
+          new Response(proc.stderr).text(),
+          proc.exited,
+        ]);
+        if (exitCode !== 0) {
+          console.error(`Error: failed to resolve PR #${prNumber}: ${stderr.trim()}`);
+          console.error("Make sure 'gh' CLI is installed and authenticated.");
+          process.exit(1);
+        }
+        branch = stdout.trim();
+        if (!branch) {
+          console.error(`Error: PR #${prNumber} has no branch name`);
+          process.exit(1);
+        }
+        console.log(`PR #${prNumber} → branch '${branch}'`);
+      } catch {
+        console.error("Error: 'gh' CLI not found. Install it from https://cli.github.com");
+        process.exit(1);
+      }
+    }
+
     const safeBranch = branch.replace(/\//g, "-");
 
     const config = loadConfig();
-    const repoConfig = getRepoConfig(config, mainRepoPath);
+    let repoConfig = getRepoConfig(config, mainRepoPath);
+
+    // Template: merge template config with repo config
+    const templateName = argv.template as string | undefined;
+    if (templateName) {
+      const template = resolveTemplate(config, templateName);
+      if (!template) {
+        const available = Object.keys(config.templates ?? {});
+        console.error(`Error: template '${templateName}' not found.`);
+        if (available.length > 0) {
+          console.error(`Available templates: ${available.join(", ")}`);
+        } else {
+          console.error("No templates configured. Add templates to your config file.");
+        }
+        process.exit(1);
+      }
+      repoConfig = mergeTemplateWithRepo(repoConfig, template);
+      // Template can override base branch
+      if (template.base && !argv.base) {
+        (argv as Record<string, unknown>).base = template.base;
+      }
+      console.log(`Using template '${templateName}'`);
+    }
 
     const pathTemplate = (argv.path as string | undefined) ?? repoConfig.worktreeDir;
     const expandedPath = expandTemplate(pathTemplate, {
@@ -84,6 +148,11 @@ const cmd: CommandModule = {
         mainRepoPath,
       );
       console.log("  ✓ Worktree created");
+
+      if (prNumber) {
+        writePRMeta(worktreePath, { number: prNumber, branch, createdAt: new Date().toISOString() });
+        console.log(`  ✓ PR #${prNumber} metadata saved`);
+      }
     } catch (err) {
       if (err instanceof GitError) {
         console.error(`Error creating worktree: ${err.stderr || err.message}`);
@@ -128,6 +197,21 @@ const cmd: CommandModule = {
         }
         if (linkResult.linked.length > 0) {
           console.log(`  ✓ Linked: ${linkResult.linked.join(", ")}`);
+        }
+      }
+
+      if (repoConfig.sharedDeps && repoConfig.sharedDeps.paths && repoConfig.sharedDeps.paths.length > 0) {
+        const strategy = repoConfig.sharedDeps.strategy ?? "symlink";
+        console.log(`  Sharing dependencies (${strategy}): ${repoConfig.sharedDeps.paths.join(", ")}`);
+        const depsResult = applySharedDeps(mainRepoPath, worktreePath, repoConfig.sharedDeps);
+        for (const warning of depsResult.warnings) {
+          console.log(`  ⚠ ${warning}`);
+        }
+        if (depsResult.linked.length > 0) {
+          console.log(`  ✓ Shared (${strategy}): ${depsResult.linked.join(", ")}`);
+        }
+        if (depsResult.copied.length > 0) {
+          console.log(`  ✓ Copied: ${depsResult.copied.join(", ")}`);
         }
       }
 

@@ -1,8 +1,9 @@
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, createEffect, on, For, Show } from "solid-js";
 import { useApp } from "../context/AppContext.tsx";
 import { useGit } from "../context/GitContext.tsx";
 import { GitWorktree } from "../../core/git.ts";
 import { loadConfig, getRepoConfig, expandTemplate } from "../../core/config.ts";
+import { invalidateGitCache } from "../../core/git.ts";
 import { copyFiles, linkFiles } from "../../core/files.ts";
 import { executeHooks } from "../../core/hooks.ts";
 import { writeFocus } from "../../core/focus.ts";
@@ -28,6 +29,32 @@ export function WorktreeCreate() {
   const [resolvedPath, setResolvedPath] = createSignal("");
   const [progressSteps, setProgressSteps] = createSignal<ProgressStep[]>([]);
   const [statusMsg, setStatusMsg] = createSignal("");
+  const [branches, setBranches] = createSignal<{ name: string; isRemote: boolean; lastCommitDate: string }[]>([]);
+  const [branchPickerIdx, setBranchPickerIdx] = createSignal(-1);
+  const [showPicker, setShowPicker] = createSignal(false);
+
+  const filteredBranches = () => {
+    const query = branchInput().toLowerCase();
+    if (!query) return branches().slice(0, 10);
+    return branches()
+      .filter((b) => b.name.toLowerCase().includes(query))
+      .slice(0, 10);
+  };
+
+  createEffect(on(() => activeRepoPath(), async () => {
+    try {
+      const repoPath = activeRepoPath();
+      const branchList = await GitWorktree.listBranches(repoPath);
+      setBranches(branchList);
+    } catch {
+      setBranches([]);
+    }
+  }));
+
+  createEffect(on(branchInput, () => {
+    setBranchPickerIdx(-1);
+    setShowPicker(branchInput().length > 0 && filteredBranches().length > 0);
+  }));
 
   const updateStep = (index: number, updates: Partial<ProgressStep>) => {
     setProgressSteps(steps => steps.map((s, i) => i === index ? { ...s, ...updates } : s));
@@ -74,11 +101,35 @@ export function WorktreeCreate() {
 
     if (step() === "input") {
       if (key === "tab") {
+        if (showPicker() && focusField() === "branch") {
+          setShowPicker(false);
+          setBranchPickerIdx(-1);
+        }
         setFocusField(f => f === "branch" ? "focus" : "branch");
         return;
       }
+      if (focusField() === "branch" && showPicker() && filteredBranches().length > 0) {
+        if (key === "down") {
+          setBranchPickerIdx((i) => Math.min(i + 1, filteredBranches().length - 1));
+          return;
+        }
+        if (key === "up") {
+          setBranchPickerIdx((i) => Math.max(i - 1, -1));
+          return;
+        }
+      }
       if (key === "return" || key === "enter") {
+        if (focusField() === "branch" && branchPickerIdx() >= 0) {
+          const selected = filteredBranches()[branchPickerIdx()];
+          if (selected) {
+            setBranchInput(selected.name);
+            setShowPicker(false);
+            setBranchPickerIdx(-1);
+            return;
+          }
+        }
         if (!branchInput()) return;
+        setShowPicker(false);
         setResolvedPath(resolveTargetPath());
         setStep("preview");
         return;
@@ -332,9 +383,27 @@ export function WorktreeCreate() {
             </box>
           </box>
 
+          <Show when={showPicker() && focusField() === "branch" && filteredBranches().length > 0}>
+            <For each={filteredBranches()}>
+              {(b, idx) => (
+                <box height={1}>
+                  <text x={4} y={0}
+                    fg={idx() === branchPickerIdx() ? theme.text.accent : theme.text.secondary}
+                    backgroundColor={idx() === branchPickerIdx() ? theme.select.focusedBg : undefined}>
+                    {idx() === branchPickerIdx() ? "\u25B8 " : "  "}
+                    {b.name}
+                  </text>
+                  <text x={Math.max(4 + b.name.length + 4, 30)} y={0} fg={theme.border.subtle}>
+                    {b.isRemote ? "(remote) " : ""}{b.lastCommitDate}
+                  </text>
+                </box>
+              )}
+            </For>
+          </Show>
+
           <box height={1}>
             <text x={3} y={0} fg={theme.border.subtle}>
-              {"Tab to switch fields"}
+              {"Tab to switch fields · ↑↓ to select branch"}
             </text>
           </box>
 

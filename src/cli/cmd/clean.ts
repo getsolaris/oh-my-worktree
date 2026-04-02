@@ -1,6 +1,8 @@
 import type { CommandModule } from "yargs";
 import { GitWorktree } from "../../core/git.ts";
 import { GitError } from "../../core/types.ts";
+import { loadConfig } from "../../core/config.ts";
+import { analyzeLifecycle, formatLifecycleReport } from "../../core/lifecycle.ts";
 import * as readline from "node:readline";
 
 async function confirm(question: string): Promise<boolean> {
@@ -19,7 +21,8 @@ const cmd: CommandModule = {
   builder: (yargs) =>
     yargs
       .option("dry-run", { type: "boolean", alias: "n", describe: "Show what would be removed" })
-      .option("yes", { type: "boolean", alias: "y", describe: "Skip confirmation" }),
+      .option("yes", { type: "boolean", alias: "y", describe: "Skip confirmation" })
+      .option("stale", { type: "boolean", describe: "Also show stale worktrees (based on lifecycle config)" }),
   handler: async (argv) => {
     const dryRun = !!(argv["dry-run"] || argv.n);
     const yes = !!argv.yes;
@@ -70,6 +73,17 @@ const cmd: CommandModule = {
 
       await GitWorktree.prune(mainRepoPath);
       if (!dryRun) console.log("Pruned stale worktree entries.");
+
+      if (argv.stale) {
+        const config = loadConfig();
+        if (config.lifecycle) {
+          const report = await analyzeLifecycle(worktrees, config.lifecycle, mainBranch, mainRepoPath);
+          console.log();
+          console.log(formatLifecycleReport(report));
+        } else {
+          console.log("\nNo lifecycle config found. Add 'lifecycle' to your config to enable stale detection.");
+        }
+      }
 
       process.exit(0);
     } catch (err) {
