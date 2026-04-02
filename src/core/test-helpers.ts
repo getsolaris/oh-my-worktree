@@ -47,7 +47,7 @@ export async function createTempRepo(prefix = "omw-test-"): Promise<string> {
   const dir = createTempDir(prefix);
   writeFileSync(join(dir, "README.md"), "# temp repo\n");
 
-  await runGit(["init"], dir);
+  await runGit(["init", "-b", "main"], dir);
   await runGit(["add", "."], dir);
   await runGit(["commit", "-m", "init"], dir);
 
