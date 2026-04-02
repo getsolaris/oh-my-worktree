@@ -23,6 +23,19 @@ Manage git worktrees with ease. Create, switch, and clean up worktrees with conf
 - **Lifecycle management** — auto-detect stale/merged worktrees, configurable limits
 - **Shared dependencies** — save disk with hardlink/symlink strategies for `node_modules`
 - **Worktree diff** — compare changes between worktrees (`omw diff feature/a feature/b`)
+- **Pin protection** — protect worktrees from auto-cleanup (`omw pin`)
+- **Activity log** — track create/delete/switch/rename/archive/import events (`omw log`)
+- **Archive** — preserve worktree changes as patches before removal (`omw archive`)
+- **Branch rename** — rename worktree branches with metadata migration (`omw rename`)
+- **Clone & init** — clone repos with omw config initialization (`omw clone`)
+- **Import worktrees** — adopt manually-created worktrees (`omw import`)
+- **Detail view** — expanded worktree info with commits, diff stats, upstream status (TUI)
+- **Bulk actions** — multi-select and batch operations on worktrees (TUI)
+- **Toast notifications** — non-blocking operation feedback (TUI)
+- **Shell completions** — tab completion for bash/zsh/fish (`omw shell-init --completions`)
+- **Config profiles** — switch between configuration sets (`omw config --profiles`)
+- **Tmux sessions** — auto-create/kill tmux sessions per worktree with layout templates (`omw session`)
+- **AI agent skills** — install omw skill for Claude Code, Codex, OpenCode (`omw init --skill`)
 
 ## Requirements
 
@@ -30,6 +43,7 @@ Manage git worktrees with ease. Create, switch, and clean up worktrees with conf
 - git 2.17+
 - macOS or Linux
 - [gh CLI](https://cli.github.com) (optional, for `--pr` flag)
+- [tmux](https://github.com/tmux/tmux) (optional, for `omw session`)
 
 ## Installation
 
@@ -75,6 +89,30 @@ omw add --pr 123
 # Use a template
 omw add feature/login --create --template review
 
+# Pin a worktree to protect from cleanup
+omw pin feature/important --reason "active sprint"
+
+# View activity log
+omw log
+
+# Archive worktree changes before removing
+omw archive feature/done --yes
+
+# Rename a worktree branch
+omw rename old-name new-name
+
+# Clone and initialize omw
+omw clone https://github.com/user/repo.git
+
+# Import an existing worktree
+omw import /path/to/worktree
+
+# Open/attach tmux session for a worktree
+omw session feature/my-feature
+
+# Create worktree with tmux session
+omw add feature/new --create --session
+
 # Run command across all worktrees
 omw exec "bun test"
 
@@ -92,6 +130,9 @@ omw remove feature/my-feature --yes
 
 # Clean up merged worktrees
 omw clean --dry-run
+
+# Generate AI agent skill file
+omw init --skill claude-code
 ```
 
 ## TUI Usage
@@ -106,6 +147,11 @@ Launch with `omw` (no arguments).
 | `a`       | Add worktree           |
 | `d`       | Delete worktree        |
 | `h`       | Doctor (health check)  |
+| `Enter`   | Open detail view       |
+| `Escape`  | Close detail view      |
+| `Space`   | Toggle worktree selection |
+| `Ctrl+A`  | Select all worktrees   |
+| `x`       | Bulk actions menu      |
 | `r`       | Refresh list           |
 | `Ctrl+P`  | Command palette        |
 | `?`       | Help                   |
@@ -164,6 +210,14 @@ Press `r` to recheck, `Esc` to go back.
 | `omw config`             | Manage configuration                 |
 | `omw exec <command>`     | Run command in each worktree         |
 | `omw diff <ref1> [ref2]` | Diff between worktrees/branches      |
+| `omw pin <branch>`       | Pin/unpin worktree (protect from cleanup) |
+| `omw log`                | Show worktree activity log           |
+| `omw archive <branch>`   | Archive changes and optionally remove |
+| `omw rename <old> <new>` | Rename worktree branch               |
+| `omw clone <url>`        | Clone repo and initialize omw        |
+| `omw import <path>`      | Adopt worktree with omw metadata     |
+| `omw session [branch]`   | Manage tmux sessions for worktrees   |
+| `omw init`               | Initialize omw integrations (AI agent skills) |
 
 ### `omw add`
 
@@ -267,6 +321,104 @@ omw diff feature/a --name-only       # Changed file names only
 omw diff feature/a                   # Compare against current HEAD
 ```
 
+### `omw pin`
+
+```bash
+omw pin feature/auth --reason "active sprint"  # Pin with reason
+omw pin --list                                  # List pinned worktrees
+omw pin --list --json                           # JSON output
+omw unpin feature/auth                          # Unpin
+```
+
+Pinned worktrees are excluded from `omw clean` and lifecycle auto-cleanup.
+
+### `omw log`
+
+```bash
+omw log                # Show last 20 events
+omw log --limit 50     # Show last 50 events
+omw log --json         # JSON output
+omw log --clear        # Clear activity log
+```
+
+Events are color-coded: create (green), delete (red), switch (blue), rename (yellow), archive (magenta), import (cyan).
+
+### `omw archive`
+
+```bash
+omw archive feature/done --yes       # Archive and remove
+omw archive feature/wip --keep       # Archive without removing
+omw archive --list                   # List all archives
+omw archive --list --json            # JSON output
+```
+
+Archives are stored as patch files in `~/.omw/archives/`.
+
+### `omw rename`
+
+```bash
+omw rename old-branch new-branch             # Rename branch
+omw rename old-branch new-branch --move-path # Also move worktree directory
+```
+
+### `omw clone`
+
+```bash
+omw clone https://github.com/user/repo.git              # Clone and init
+omw clone https://github.com/user/repo.git ./my-dir     # Custom target path
+omw clone https://github.com/user/repo.git --template review # Apply template
+omw clone https://github.com/user/repo.git --no-init-config  # Skip config init
+```
+
+### `omw import`
+
+```bash
+omw import /path/to/worktree                           # Adopt worktree
+omw import /path/to/worktree --focus apps/web,apps/api # With focus
+omw import /path/to/worktree --pin                     # Pin immediately
+```
+
+### `omw session`
+
+Manage tmux sessions for worktrees. Requires tmux.
+
+```bash
+omw session feature/auth              # Open/attach session (create if needed)
+omw session feature/auth --layout api # Use named layout from config
+omw session --list                    # List active omw sessions
+omw session --list --json             # JSON output
+omw session feature/auth --kill       # Kill session for worktree
+omw session --kill-all                # Kill all omw sessions
+```
+
+Sessions are auto-created/killed when `sessions.autoCreate` / `sessions.autoKill` are enabled in config.
+
+```bash
+# Create worktree with tmux session
+omw add feature/login --create --session
+omw add feature/login --create --session --layout api
+```
+
+When `sessions.enabled` is `true` and you're inside tmux, `omw switch` automatically switches to the target worktree's tmux session.
+
+### `omw init`
+
+Install omw skill for AI coding agents so they can use omw commands.
+
+```bash
+omw init --skill claude-code   # → ~/.claude/skills/omw/SKILL.md
+omw init --skill codex          # → ~/.agents/skills/omw/SKILL.md
+omw init --skill opencode       # → ~/.config/opencode/skill/omw/SKILL.md
+```
+
+| Platform | Skill Path |
+|----------|-----------|
+| `claude-code` | `~/.claude/skills/omw/SKILL.md` |
+| `codex` | `~/.agents/skills/omw/SKILL.md` |
+| `opencode` | `~/.config/opencode/skill/omw/SKILL.md` |
+
+The command is idempotent — running it again updates the skill file.
+
 ## Configuration
 
 Config file: `~/.config/oh-my-worktree/config.json`
@@ -312,6 +464,27 @@ Initialize with: `omw config --init`
     "autoCleanMerged": true,
     "staleAfterDays": 14,
     "maxWorktrees": 10
+  },
+  "sessions": {
+    "enabled": true,
+    "autoCreate": false,
+    "autoKill": true,
+    "prefix": "omw",
+    "defaultLayout": "dev",
+    "layouts": {
+      "dev": {
+        "windows": [
+          { "name": "editor", "command": "$EDITOR ." },
+          { "name": "dev", "command": "bun dev" },
+          { "name": "test", "command": "bun test --watch" }
+        ]
+      },
+      "minimal": {
+        "windows": [
+          { "name": "shell" }
+        ]
+      }
+    }
   },
   "repos": [
     {
@@ -481,6 +654,59 @@ Automatic worktree lifecycle management. Used by `omw clean --stale`.
 | `staleAfterDays`  | `number`  | —       | Days of inactivity before flagging as stale |
 | `maxWorktrees`    | `number`  | —       | Warn when exceeding this count              |
 
+#### Config Profiles
+
+Switch between different configuration sets.
+
+```bash
+omw config --profiles                    # List profiles
+omw config --profile work --activate     # Activate profile
+omw config --profile personal --delete   # Delete profile
+```
+
+#### `sessions`
+
+Tmux session management for worktrees.
+
+```json
+{
+  "sessions": {
+    "enabled": true,
+    "autoCreate": true,
+    "autoKill": true,
+    "prefix": "omw",
+    "defaultLayout": "dev",
+    "layouts": {
+      "dev": {
+        "windows": [
+          { "name": "editor", "command": "$EDITOR ." },
+          { "name": "dev", "command": "bun dev" },
+          { "name": "test", "command": "bun test --watch" }
+        ]
+      }
+    }
+  }
+}
+```
+
+| Field           | Type      | Default | Description                                        |
+| --------------- | --------- | ------- | -------------------------------------------------- |
+| `enabled`       | `boolean` | `false` | Enable session integration (auto-switch in tmux)   |
+| `autoCreate`    | `boolean` | `false` | Auto-create tmux session on `omw add`              |
+| `autoKill`      | `boolean` | `false` | Auto-kill tmux session on `omw remove`             |
+| `prefix`        | `string`  | `"omw"` | Prefix for tmux session names                      |
+| `defaultLayout` | `string`  | —       | Default layout name for new sessions               |
+| `layouts`       | `object`  | `{}`    | Named layouts with window definitions              |
+
+**Layout windows:**
+
+| Field     | Type     | Required | Description                    |
+| --------- | -------- | -------- | ------------------------------ |
+| `name`    | `string` | Yes      | Window name                    |
+| `command` | `string` | No       | Command to run in the window   |
+
+Session naming: branch `feat/auth-token` → tmux session `omw:feat-auth-token`.
+
 #### `sharedDeps`
 
 Share dependencies between main repo and worktrees to save disk space. Can be set in `defaults` or per-repo.
@@ -557,6 +783,19 @@ Available: `opencode`, `tokyo-night`, `dracula`, `nord`, `catppuccin`, `github-d
 ## Shell Integration
 
 Use `omw shell-init` to install shell integration for `omw switch`.
+
+### Completions
+
+```bash
+# Add completions (bash)
+eval "$(omw shell-init --completions bash)"
+
+# Add completions (zsh)
+eval "$(omw shell-init --completions zsh)"
+
+# Add completions (fish)
+omw shell-init --completions fish | source
+```
 
 ### Examples
 

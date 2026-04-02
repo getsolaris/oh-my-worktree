@@ -1,5 +1,6 @@
 import type { CommandModule } from "yargs";
 import { loadConfig, getConfigPath, initConfig, validateConfig } from "../../core/config.ts";
+import { deleteProfile, getActiveProfile, listProfiles, setActiveProfile } from "../../core/profiles.ts";
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
@@ -15,7 +16,11 @@ const cmd: CommandModule = {
       .option("show", { type: "boolean", alias: "s", describe: "Print current config as JSON" })
       .option("edit", { type: "boolean", alias: "e", describe: "Open config in $EDITOR" })
       .option("path", { type: "boolean", describe: "Print config file path" })
-      .option("validate", { type: "boolean", describe: "Validate config against schema" }),
+      .option("validate", { type: "boolean", describe: "Validate config against schema" })
+      .option("profiles", { type: "boolean", describe: "List config profiles" })
+      .option("profile", { type: "string", describe: "Profile name for activation/deletion" })
+      .option("activate", { type: "boolean", describe: "Activate the specified profile" })
+      .option("delete", { type: "boolean", describe: "Delete the specified profile" }),
   handler: async (argv) => {
     const configPath = getConfigPath();
 
@@ -75,6 +80,33 @@ const cmd: CommandModule = {
       }
     }
 
+    if (argv.profiles) {
+      try {
+        const config = loadConfig();
+        const profiles = listProfiles(config);
+        const activeProfile = getActiveProfile(config);
+
+        for (const profile of profiles) {
+          const marker = profile === activeProfile ? " ★" : "";
+          console.log(`${profile}${marker}`);
+        }
+      } catch (err) {
+        console.error(`Error loading config: ${(err as Error).message}`);
+        process.exit(1);
+      }
+      process.exit(0);
+    }
+
+    if (argv.profile && argv.activate) {
+      setActiveProfile(argv.profile as string);
+      process.exit(0);
+    }
+
+    if (argv.profile && argv.delete) {
+      deleteProfile(argv.profile as string);
+      process.exit(0);
+    }
+
     console.log("Usage: omw config [options]");
     console.log("");
     console.log("Options:");
@@ -83,6 +115,10 @@ const cmd: CommandModule = {
     console.log("  --edit, -e  Open config in $EDITOR");
     console.log("  --path      Print config file path");
     console.log("  --validate  Validate config against schema");
+    console.log("  --profiles  List config profiles");
+    console.log("  --profile   Profile name for activation/deletion");
+    console.log("  --activate  Activate the specified profile");
+    console.log("  --delete    Delete the specified profile");
     console.log("");
     console.log(`Config path: ${configPath}`);
     process.exit(0);

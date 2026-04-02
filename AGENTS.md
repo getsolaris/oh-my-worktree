@@ -39,6 +39,7 @@ src/
     files.ts           # File copy/symlink operations
     monorepo.ts        # Monorepo detection and package discovery
     glob-hooks.ts      # Glob-matched per-package hooks
+    session.ts         # Tmux session management (stored in git internals)
     types.ts           # Shared types and custom error classes
     test-helpers.ts    # Temp repo creation, cleanup for tests
 ```
@@ -157,3 +158,19 @@ All git commands go through `GitWorktree.run()` (private static). This:
 - TUI uses SolidJS JSX transform via `bunfig.toml` preload (Babel plugin)
 - Config file: `~/.config/oh-my-worktree/config.json` (XDG-compliant)
 - Focus metadata: stored in git internals (`<gitdir>/omw-focus`), not in worktree root
+- Session metadata: stored in git internals (`<gitdir>/omw-session`), not in worktree root
+
+## Feature Completion Checklist
+
+When adding or modifying a feature, **all** of the following must be updated before the work is considered complete:
+
+1. **Implementation** — core module in `src/core/`, CLI command in `src/cli/cmd/`
+2. **Tests** — co-located `*.test.ts` in `src/core/`
+3. **Config** — update `config.ts` (types, validation, valid keys), `schema.json`
+4. **CLI index** — register new commands in `src/cli/index.ts`
+5. **README.md** — features list, quick start, CLI commands table, command docs, config docs
+6. **README.ko.md** — mirror all README.md changes in Korean
+7. **examples/** — add or update `examples/<command>.md`
+8. **AGENTS.md** — update architecture table, module map, key constraints if applicable
+9. **src/core/AGENTS.md** — update module map with new core modules
+10. **Typecheck + Tests** — `bun run typecheck` and `bun test` must pass

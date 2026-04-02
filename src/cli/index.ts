@@ -11,7 +11,7 @@ if (process.argv.length === 2) {
   const { launchTUI } = await import("../tui/App.tsx");
   await launchTUI();
 } else {
-  const [addCmd, listCmd, removeCmd, switchCmd, cleanCmd, configCmd, doctorCmd, shellInitCmd, statusCmd, openCmd, execCmd, diffCmd] =
+  const [addCmd, listCmd, removeCmd, switchCmd, cleanCmd, configCmd, doctorCmd, shellInitCmd, statusCmd, openCmd, execCmd, diffCmd, pinCmd, logCmd, archiveCmd, renameCmd, cloneCmd, importCmd, sessionCmd, initCmd] =
     await Promise.all([
       import("./cmd/add.ts"),
       import("./cmd/list.ts"),
@@ -25,6 +25,14 @@ if (process.argv.length === 2) {
       import("./cmd/open.ts"),
       import("./cmd/exec.ts"),
       import("./cmd/diff.ts"),
+      import("./cmd/pin.ts"),
+      import("./cmd/log.ts"),
+      import("./cmd/archive.ts"),
+      import("./cmd/rename.ts"),
+      import("./cmd/clone.ts"),
+      import("./cmd/import.ts"),
+      import("./cmd/session.ts"),
+      import("./cmd/init.ts"),
     ]);
 
   yargs(hideBin(process.argv))
@@ -50,6 +58,14 @@ if (process.argv.length === 2) {
     .command(openCmd.default)
     .command(execCmd.default)
     .command(diffCmd.default)
+    .command(pinCmd.default)
+    .command(logCmd.default)
+    .command(archiveCmd.default)
+    .command(renameCmd.default)
+    .command(cloneCmd.default)
+    .command(importCmd.default)
+    .command(sessionCmd.default)
+    .command(initCmd.default)
     .completion("completion", "Generate shell completion script")
     .demandCommand(
       1,

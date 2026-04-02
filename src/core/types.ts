@@ -34,3 +34,56 @@ export class GitVersionError extends Error {
     this.name = "GitVersionError";
   }
 }
+
+export interface PinMetadata {
+  branch: string;
+  pinnedAt: string;
+  reason?: string;
+}
+
+export type ActivityEventType =
+  | "create"
+  | "delete"
+  | "switch"
+  | "rename"
+  | "archive"
+  | "import";
+
+export interface ActivityEvent {
+  timestamp: string;
+  event: ActivityEventType;
+  branch: string;
+  path?: string;
+  details?: Record<string, string>;
+}
+
+export interface ArchiveEntry {
+  branch: string;
+  repo: string;
+  archivedAt: string;
+  patchPath: string;
+  commitHash: string;
+  message: string;
+}
+
+export class ArchiveError extends Error {
+  constructor(
+    message: string,
+    public branch: string,
+    public reason: string,
+  ) {
+    super(message);
+    this.name = "ArchiveError";
+  }
+}
+
+export class ImportError extends Error {
+  constructor(
+    message: string,
+    public path: string,
+    public reason: string,
+  ) {
+    super(message);
+    this.name = "ImportError";
+  }
+}

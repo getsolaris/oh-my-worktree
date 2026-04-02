@@ -3,14 +3,16 @@ import { useApp } from "../context/AppContext.tsx";
 import { useGit } from "../context/GitContext.tsx";
 import { useKeyboard } from "@opentui/solid";
 import { theme } from "../themes.ts";
+import { isPinned } from "../../core/pin.ts";
+import { readSessionMeta } from "../../core/session.ts";
 import type { Worktree } from "../../core/types.ts";
 
-const INNER_W = 26;
+const INNER_W = 24;
 
 type DisplayItem =
-  | { type: "header"; repoName: string; y: number }
-  | { type: "separator"; y: number }
-  | { type: "worktree"; wt: Worktree; flatIdx: number; y: number };
+  | { type: "header"; repoName: string }
+  | { type: "separator" }
+  | { type: "worktree"; wt: Worktree; flatIdx: number };
 
 export function Sidebar() {
   const app = useApp();
@@ -26,7 +28,7 @@ export function Sidebar() {
 
     if (!multiRepo) {
       for (let i = 0; i < wts.length; i++) {
-        items.push({ type: "worktree", wt: wts[i], flatIdx: i, y: i });
+        items.push({ type: "worktree", wt: wts[i], flatIdx: i });
       }
       return items;
     }
@@ -41,32 +43,32 @@ export function Sidebar() {
       }
     }
 
-    let y = 0;
     let flatIdx = 0;
     let isFirst = true;
     for (const [repoName, repoWts] of grouped) {
       if (!isFirst) {
-        items.push({ type: "separator", y });
-        y += 1;
+        items.push({ type: "separator" });
       }
       isFirst = false;
 
-      items.push({ type: "header", repoName, y });
-      y += 1;
+      items.push({ type: "header", repoName });
 
       for (const wt of repoWts) {
-        items.push({ type: "worktree", wt, flatIdx, y });
+        items.push({ type: "worktree", wt, flatIdx });
         flatIdx++;
-        y += 1;
       }
     }
 
     return items;
   });
 
+  const selectionCount = () => app.selectedWorktrees().size;
+
   useKeyboard((event: any) => {
     if (app.activeTab() !== "list") return;
     if (app.showCommandPalette()) return;
+    if (app.showRemove()) return;
+    if (app.showBulkActions()) return;
     const key = event.name;
     const wts = worktrees();
     if (key === "j" || key === "down") {
@@ -74,6 +76,16 @@ export function Sidebar() {
     }
     if (key === "k" || key === "up") {
       app.setSelectedWorktreeIndex(Math.max(selectedIdx() - 1, 0));
+    }
+    if (key === "space") {
+      const idx = selectedIdx();
+      const wt = wts[idx];
+      if (wt && !wt.isMain) {
+        app.toggleWorktreeSelection(idx);
+      }
+    }
+    if (event.ctrl && key === "a") {
+      app.selectAllNonMain(wts.length, (i: number) => wts[i]?.isMain ?? false);
     }
   });
 
@@ -89,25 +101,25 @@ export function Sidebar() {
     return theme.text.success;
   };
 
-  const truncBranch = (wt: Worktree, selected: boolean) => {
+  const truncBranch = (wt: Worktree, withCheck: boolean) => {
     const b = wt.branch ?? "(detached)";
-    const maxLen = INNER_W - (selected ? 7 : 6);
+    const maxLen = Math.max(8, INNER_W - (withCheck ? 9 : 7));
     return b.length > maxLen ? b.slice(0, maxLen - 1) + "\u2026" : b;
   };
 
   return (
-    <box x={0} y={0} width="100%" height="100%" backgroundColor={theme.bg.surface}>
+    <box x={0} y={0} width="100%" height="100%" backgroundColor={theme.bg.surface} flexDirection="column" paddingX={1} paddingY={1} gap={0}>
       <Show when={git.loading()}>
-        <text x={1} y={1} fg={theme.text.secondary}>Loading...</text>
+        <text fg={theme.text.secondary}>Loading...</text>
       </Show>
       <Show when={!git.loading()}>
         <For each={displayItems()}>
           {(item) => {
             if (item.type === "header") {
               return (
-                <box x={0} y={item.y} width="100%" height={1}>
-                  <text x={1} y={0} fg={theme.text.accent}>
-                    {item.repoName}
+                <box width="100%" height={1}>
+                  <text fg={theme.text.accent}>
+                    <b>{item.repoName}</b>
                   </text>
                 </box>
               );
@@ -115,37 +127,56 @@ export function Sidebar() {
 
             if (item.type === "separator") {
               return (
-                <box x={0} y={item.y} width="100%" height={1}>
-                  <text x={1} y={0} fg={theme.border.subtle}>
-                    {"\u2500".repeat(INNER_W - 2)}
+                <box width="100%" height={1}>
+                  <text fg={theme.border.subtle}>
+                    {"\u2500".repeat(INNER_W)}
                   </text>
                 </box>
               );
             }
 
             const wt = item.wt;
-            const isSelected = () => item.flatIdx === selectedIdx();
-
+            const isFocused = () => item.flatIdx === selectedIdx();
+            const isChecked = () => app.selectedWorktrees().has(item.flatIdx);
             return (
               <box
-                x={0} y={item.y}
                 width="100%" height={1}
-                backgroundColor={isSelected() ? theme.select.focusedBg : theme.bg.surface}
+                backgroundColor={isFocused() ? theme.select.focusedBg : isChecked() ? theme.bg.elevated : theme.bg.surface}
+                paddingX={1}
                 onMouseDown={() => app.setSelectedWorktreeIndex(item.flatIdx)}
               >
-                <text x={1} y={0} fg={isSelected() ? theme.tab.active : theme.text.primary}>
-                  {isSelected() ? "\u25B6 " : "  "}
-                </text>
-                <text x={isSelected() ? 3 : 3} y={0} fg={statusColor(wt)}>
+                <text x={0} y={0} fg={statusColor(wt)}>
                   {statusIcon(wt)}
                 </text>
-                <text x={5} y={0} fg={isSelected() ? theme.tab.active : theme.text.primary}>
-                  {truncBranch(wt, isSelected())}
+                <text x={2} y={0} fg={isFocused() ? theme.tab.active : theme.text.primary}>
+                  {truncBranch(wt, false)}
                 </text>
+                <Show when={isChecked()}>
+                  <text x={INNER_W - 1} y={0} fg={theme.text.accent}>
+                    {"\u2713"}
+                  </text>
+                </Show>
+                <Show when={!!readSessionMeta(wt.path)}>
+                  <text x={INNER_W - (isChecked() ? 3 : 1)} y={0} fg={theme.text.accent}>
+                    {"S"}
+                  </text>
+                </Show>
+                <Show when={isPinned(wt.path)}>
+                  <text x={INNER_W - (isChecked() ? 5 : 3) + (readSessionMeta(wt.path) ? 0 : 2)} y={0} fg={theme.text.warning}>
+                    {"P"}
+                  </text>
+                </Show>
               </box>
             );
           }}
         </For>
+        <Show when={selectionCount() > 0}>
+          <box width="100%" height={1}>
+            <text fg={theme.text.accent}>
+              {`Selected: ${selectionCount()}`}
+            </text>
+          </box>
+        </Show>
       </Show>
     </box>
   );

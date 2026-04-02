@@ -41,6 +41,65 @@
         }
       }
     },
+    "sessions": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Tmux session management for worktrees",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable tmux session integration"
+        },
+        "autoCreate": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically create tmux session on worktree creation"
+        },
+        "autoKill": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically kill tmux session on worktree removal"
+        },
+        "prefix": {
+          "type": "string",
+          "default": "omw",
+          "description": "Prefix for tmux session names"
+        },
+        "defaultLayout": {
+          "type": "string",
+          "description": "Default layout name to use when creating sessions"
+        },
+        "layouts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["windows"],
+            "additionalProperties": false,
+            "properties": {
+              "windows": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Window name"
+                    },
+                    "command": {
+                      "type": "string",
+                      "description": "Command to run in the window"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "repos": {
       "type": "array",
       "items": {

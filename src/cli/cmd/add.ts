@@ -3,13 +3,15 @@ import { basename, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { GitWorktree } from "../../core/git.ts";
 import { GitError } from "../../core/types.ts";
-import { loadConfig, getRepoConfig, expandTemplate, resolveTemplate, mergeTemplateWithRepo } from "../../core/config.ts";
+import { loadConfig, getRepoConfig, expandTemplate, resolveTemplate, mergeTemplateWithRepo, getSessionConfig, resolveSessionLayout } from "../../core/config.ts";
 import { executeHooks, HookError, HookTimeoutError } from "../../core/hooks.ts";
 import { matchHooksForFocus, executeGlobHooks } from "../../core/glob-hooks.ts";
 import { copyFiles, linkFiles, applySharedDeps } from "../../core/files.ts";
 import { writeFocus } from "../../core/focus.ts";
 import { writePRMeta } from "../../core/pr.ts";
+import { logActivity } from "../../core/activity-log.ts";
 import { validateFocusPaths } from "../../core/monorepo.ts";
+import { isTmuxAvailable, openSession } from "../../core/session.ts";
 
 const cmd: CommandModule = {
   command: "add <branch> [path]",
@@ -49,6 +51,15 @@ const cmd: CommandModule = {
       .option("pr", {
         type: "number",
         describe: "Create worktree from a GitHub PR number (requires gh CLI)",
+      })
+      .option("session", {
+        type: "boolean",
+        alias: "s",
+        describe: "Create a tmux session for this worktree",
+      })
+      .option("layout", {
+        type: "string",
+        describe: "Session layout name from config",
       }),
   handler: async (argv) => {
     let branch = argv.branch as string;
@@ -148,6 +159,7 @@ const cmd: CommandModule = {
         mainRepoPath,
       );
       console.log("  ✓ Worktree created");
+      try { logActivity(mainRepoPath, { timestamp: new Date().toISOString(), event: "create", branch: branch as string, path: worktreePath }); } catch {}
 
       if (prNumber) {
         writePRMeta(worktreePath, { number: prNumber, branch, createdAt: new Date().toISOString() });
@@ -272,6 +284,25 @@ const cmd: CommandModule = {
             onOutput: (line) => console.log(`    ${line}`),
           });
           console.log("  ✓ Monorepo hooks completed");
+        }
+      }
+
+      const sessionConfig = getSessionConfig(config);
+      const wantSession = (argv.session as boolean) || sessionConfig.autoCreate;
+      if (wantSession) {
+        const tmuxOk = await isTmuxAvailable();
+        if (tmuxOk) {
+          const sessionLayoutName = (argv.layout as string | undefined) ?? sessionConfig.defaultLayout;
+          const sessionLayout = resolveSessionLayout(config, sessionLayoutName);
+          const sessionName = await openSession(branch, worktreePath, {
+            layout: sessionLayout,
+            prefix: sessionConfig.prefix,
+            attach: false,
+            layoutName: sessionLayoutName,
+          });
+          console.log(`  ✓ Session created: ${sessionName}`);
+        } else {
+          console.log("  ⚠ tmux not found — session skipped");
         }
       }
 

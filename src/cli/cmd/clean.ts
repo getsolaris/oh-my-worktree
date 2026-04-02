@@ -3,6 +3,7 @@ import { GitWorktree } from "../../core/git.ts";
 import { GitError } from "../../core/types.ts";
 import { loadConfig } from "../../core/config.ts";
 import { analyzeLifecycle, formatLifecycleReport } from "../../core/lifecycle.ts";
+import { isPinned } from "../../core/pin.ts";
 import * as readline from "node:readline";
 
 async function confirm(question: string): Promise<boolean> {
@@ -37,6 +38,10 @@ const cmd: CommandModule = {
       const toClean: typeof worktrees = [];
       for (const wt of worktrees) {
         if (wt.isMain) continue;
+        if (isPinned(wt.path)) {
+          console.log(`  Skipping (pinned): ${wt.branch}`);
+          continue;
+        }
         if (!wt.branch) continue;
         const merged = await GitWorktree.isMergedInto(wt.branch, mainBranch, mainRepoPath);
         if (!merged) continue;

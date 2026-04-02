@@ -1,16 +1,20 @@
 import { createSignal, Show } from "solid-js";
 import { render, useKeyboard, useTerminalDimensions, useRenderer } from "@opentui/solid";
-import { AppProvider, useApp, type TabId } from "./context/AppContext.tsx";
+import "@opentui-ui/toast/solid";
+import { AppProvider, useApp } from "./context/AppContext.tsx";
 import { GitProvider, useGit } from "./context/GitContext.tsx";
 import { GitWorktree } from "../core/git.ts";
 import { WorktreeList } from "./views/WorktreeList.tsx";
 import { WorktreeCreate } from "./views/WorktreeCreate.tsx";
 import { WorktreeRemove } from "./views/WorktreeRemove.tsx";
+import { BulkActions } from "./views/BulkActions.tsx";
 import { ConfigView } from "./views/ConfigView.tsx";
 import { DoctorView } from "./views/DoctorView.tsx";
 import { Sidebar } from "./views/Sidebar.tsx";
 import { theme, setCurrentThemeName, THEME_NAMES, type ThemeName } from "./themes.ts";
 import { CommandPalette } from "./views/CommandPalette.tsx";
+import { ToastProvider } from "./context/ToastContext.tsx";
+import { Toast } from "./views/Toast.tsx";
 import { loadConfig, getConfiguredRepoPaths } from "../core/config.ts";
 import { resolve } from "node:path";
 
@@ -19,10 +23,18 @@ declare module "solid-js" {
     interface IntrinsicElements {
       box: any;
       text: any;
+      span: any;
+      b: any;
+      strong: any;
+      em: any;
+      i: any;
+      u: any;
+      br: any;
       tab_select: any;
       select: any;
       scrollbox: any;
       input: any;
+      toaster: any;
     }
   }
 }
@@ -56,13 +68,17 @@ function AppShell(props: { repoPath: string }) {
       return;
     }
     if (key === "escape") {
+      if (app.showBulkActions()) { app.setShowBulkActions(false); return; }
+      if (app.showDetailView()) { app.setShowDetailView(false); return; }
       if (app.showRemove()) { app.setShowRemove(false); return; }
       if (showHelp()) { setShowHelp(false); return; }
       if (app.activeTab() !== "list") { app.setActiveTab("list"); return; }
     }
+    if (app.showBulkActions()) return;
     if (app.showRemove()) return;
     if (app.activeTab() === "add") return;
     if (app.activeTab() === "list") {
+      if (app.showDetailView()) return;
       if (key === "a") { app.setActiveTab("add"); return; }
       if (key === "r") { git.refetch(); return; }
       if (key === "d") {
@@ -100,28 +116,35 @@ function AppShell(props: { repoPath: string }) {
     return `${names.length} repos`;
   };
 
+  const headerMeta = () => {
+    const wts = git.worktrees() ?? [];
+    return `${repoName()} · ${wts.length} worktrees`;
+  };
+
   const sidebarTitle = () => {
     const wts = git.worktrees() ?? [];
     return ` Worktrees (${wts.length}) `;
   };
 
+  const mainW = () => w() - SIDEBAR_W - 1;
+
   return (
-    <box width={w()} height={h()} backgroundColor={theme.bg.base}>
-      <box x={0} y={0} width={w()} height={1} backgroundColor={theme.bg.overlay}>
+    <box width={w()} height={h()} backgroundColor={theme.bg.base} flexDirection="column">
+      <box height={1} backgroundColor={theme.bg.overlay}>
         <text x={1} y={0} fg={theme.text.accent}>
           {"\uD83C\uDF33 oh-my-worktree"}
         </text>
-        <text x={w() - headerRight().length - 3} y={0} fg={theme.text.secondary}>
+        <text x={w() - headerRight().length - 2} y={0} fg={theme.text.secondary}>
           {headerRight()}
         </text>
       </box>
 
-      <box x={0} y={1} width={w()} height={h() - 3} flexDirection="row">
+      <box flexGrow={1} flexDirection="row">
         <box
-          width={SIDEBAR_W} height={h() - 3}
+          width={SIDEBAR_W}
           flexShrink={0}
           backgroundColor={theme.bg.surface}
-          border={true} borderStyle="single"
+          border={true} borderStyle="rounded"
           borderColor={theme.border.default}
           title={sidebarTitle()}
           titleAlignment="left"
@@ -129,87 +152,76 @@ function AppShell(props: { repoPath: string }) {
           <Sidebar />
         </box>
 
-        <box width={w() - SIDEBAR_W} height={h() - 3} flexGrow={1} backgroundColor={theme.bg.base}>
-          <Show when={app.showCommandPalette()}>
-            <CommandPalette />
-          </Show>
-          <Show when={showHelp() && !app.showCommandPalette()}>
-            <box x={0} y={0} width={w() - SIDEBAR_W} height={h() - 3} backgroundColor={theme.bg.base}>
-              <box
-                x={2} y={1}
-                width={w() - SIDEBAR_W - 4} height={h() - 5}
-                border={true} borderStyle="single"
-                borderColor={theme.border.active}
-                backgroundColor={theme.bg.elevated}
-                title=" Keyboard Shortcuts "
-                titleAlignment="left"
-              >
-                <text x={3} y={1} fg={theme.text.secondary}>q</text>
-                <text x={10} y={1} fg={theme.text.primary}>Quit</text>
-                <text x={3} y={2} fg={theme.text.secondary}>j/k</text>
-                <text x={10} y={2} fg={theme.text.primary}>Navigate list</text>
-                <text x={3} y={3} fg={theme.text.secondary}>a</text>
-                <text x={10} y={3} fg={theme.text.primary}>Add worktree</text>
-                <text x={3} y={4} fg={theme.text.secondary}>d</text>
-                <text x={10} y={4} fg={theme.text.primary}>Delete worktree</text>
-                <text x={3} y={5} fg={theme.text.secondary}>r</text>
-                <text x={10} y={5} fg={theme.text.primary}>Refresh list</text>
-                <text x={3} y={6} fg={theme.text.secondary}>Ctrl+P</text>
-                <text x={10} y={6} fg={theme.text.primary}>Command palette</text>
-                <text x={3} y={7} fg={theme.text.secondary}>?</text>
-                <text x={10} y={7} fg={theme.text.primary}>Toggle help</text>
-                <text x={3} y={9} fg={theme.text.secondary}>Press ? to close</text>
-              </box>
-            </box>
-          </Show>
-          <Show when={!app.showCommandPalette() && !showHelp() && app.activeTab() === "list" && !app.showRemove()}>
+        <box width={1} />
+
+        <box flexGrow={1} backgroundColor={theme.bg.base}>
+          <Show when={app.activeTab() === "list" && !app.showRemove() && !app.showBulkActions()}>
             <WorktreeList />
           </Show>
-          <Show when={!app.showCommandPalette() && !showHelp() && app.activeTab() === "list" && app.showRemove()}>
-            <WorktreeRemove w={w() - SIDEBAR_W} h={h() - 3} />
+          <Show when={app.activeTab() === "list" && app.showRemove()}>
+            <WorktreeRemove w={mainW()} h={h() - 3} />
           </Show>
-          <Show when={!app.showCommandPalette() && !showHelp() && app.activeTab() === "add"}>
+          <Show when={app.activeTab() === "list" && app.showBulkActions()}>
+            <BulkActions w={mainW()} h={h() - 3} />
+          </Show>
+          <Show when={app.activeTab() === "add"}>
             <WorktreeCreate />
           </Show>
-          <Show when={!app.showCommandPalette() && !showHelp() && app.activeTab() === "config"}>
+          <Show when={app.activeTab() === "config"}>
             <ConfigView />
           </Show>
-          <Show when={!app.showCommandPalette() && !showHelp() && app.activeTab() === "doctor"}>
+          <Show when={app.activeTab() === "doctor"}>
             <DoctorView />
           </Show>
         </box>
       </box>
 
-      <box x={0} y={h() - 2} width={w()} height={1} backgroundColor={theme.bg.overlay}>
+      <Toast />
+      <toaster position="bottom-right" />
+
+      <box height={1} backgroundColor={theme.bg.overlay}>
         <text x={0} y={0} fg={theme.border.subtle}>
           {"\u2500".repeat(w())}
         </text>
       </box>
-
-      <box x={0} y={h() - 1} width={w()} height={1} backgroundColor={theme.bg.overlay}>
-        <text x={1} y={0} fg={theme.text.secondary}>{"d"}</text>
-        <text x={2} y={0} fg={theme.text.primary}>{":delete"}</text>
-        <text x={10} y={0} fg={theme.border.subtle}>{"\u2502"}</text>
-        <text x={12} y={0} fg={theme.text.secondary}>{"a"}</text>
-        <text x={13} y={0} fg={theme.text.primary}>{":add"}</text>
-        <text x={18} y={0} fg={theme.border.subtle}>{"\u2502"}</text>
-        <text x={20} y={0} fg={theme.text.secondary}>{"o"}</text>
-        <text x={21} y={0} fg={theme.text.primary}>{":open"}</text>
-        <text x={27} y={0} fg={theme.border.subtle}>{"\u2502"}</text>
-        <text x={29} y={0} fg={theme.text.secondary}>{"r"}</text>
-        <text x={30} y={0} fg={theme.text.primary}>{":refresh"}</text>
-        <text x={39} y={0} fg={theme.border.subtle}>{"\u2502"}</text>
-        <text x={41} y={0} fg={theme.text.secondary}>{"^P"}</text>
-        <text x={43} y={0} fg={theme.text.primary}>{":cmd"}</text>
-        <text x={48} y={0} fg={theme.border.subtle}>{"\u2502"}</text>
-        <text x={50} y={0} fg={theme.text.secondary}>{"h"}</text>
-        <text x={51} y={0} fg={theme.text.primary}>{":health"}</text>
-        <text x={58} y={0} fg={theme.border.subtle}>{"\u2502"}</text>
-        <text x={60} y={0} fg={theme.text.secondary}>{"q"}</text>
-        <text x={61} y={0} fg={theme.text.primary}>{":quit"}</text>
+      <box height={1} backgroundColor={theme.bg.overlay}>
+        <text x={1} y={0} fg={theme.text.secondary}>
+          {"d:delete  a:add  o:open  r:refresh  ^P:cmd  h:health  q:quit"}
+        </text>
       </box>
 
+      <Show when={showHelp() && !app.showCommandPalette()}>
+        <box
+          x={Math.max(0, Math.floor((w() - Math.max(40, Math.min(60, w() - 4))) / 2))}
+          y={Math.max(0, Math.floor((h() - 14) / 2))}
+          width={Math.max(40, Math.min(60, w() - 4))}
+          height={14}
+          border={true} borderStyle="rounded"
+          borderColor={theme.border.active}
+          backgroundColor={theme.bg.elevated}
+          title=" Keyboard Shortcuts "
+          titleAlignment="left"
+          flexDirection="column"
+          paddingX={1}
+          paddingY={1}
+          position="absolute"
+        >
+          <box height={1}><text x={1} fg={theme.text.secondary}>q</text><text x={8} fg={theme.text.primary}>Quit</text></box>
+          <box height={1}><text x={1} fg={theme.text.secondary}>j/k</text><text x={8} fg={theme.text.primary}>Navigate list</text></box>
+          <box height={1}><text x={1} fg={theme.text.secondary}>a</text><text x={8} fg={theme.text.primary}>Add worktree</text></box>
+          <box height={1}><text x={1} fg={theme.text.secondary}>d</text><text x={8} fg={theme.text.primary}>Delete worktree</text></box>
+          <box height={1}><text x={1} fg={theme.text.secondary}>r</text><text x={8} fg={theme.text.primary}>Refresh list</text></box>
+          <box height={1} />
+          <box height={1}><text x={1} fg={theme.text.secondary}>Ctrl+P</text><text x={8} fg={theme.text.primary}>Command palette</text></box>
+          <box height={1}><text x={1} fg={theme.text.secondary}>?</text><text x={8} fg={theme.text.primary}>Toggle help</text></box>
+          <box height={1} />
+          <box height={1}><text x={1} fg={theme.text.accent}>Press ? to close</text></box>
+        </box>
+      </Show>
 
+      <Show when={app.showCommandPalette()}>
+        <CommandPalette />
+      </Show>
     </box>
   );
 }
@@ -238,7 +250,9 @@ export async function launchTUI() {
     () => (
       <AppProvider repoPath={repoPath} repoPaths={repoPaths}>
         <GitProvider repoPaths={repoPaths}>
-          <AppShell repoPath={repoPath} />
+          <ToastProvider>
+            <AppShell repoPath={repoPath} />
+          </ToastProvider>
         </GitProvider>
       </AppProvider>
     ),

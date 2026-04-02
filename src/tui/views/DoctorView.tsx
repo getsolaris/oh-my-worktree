@@ -68,40 +68,39 @@ export function DoctorView() {
   const fixLen = () => fixResults().length;
 
   return (
-    <box x={0} y={0} width={w()} height={h()} backgroundColor={theme.bg.base}>
+    <box x={0} y={0} width="100%" height="100%" backgroundColor={theme.bg.base} flexDirection="column">
       <box
-        x={1} y={0}
-        width={w() - 2} height={h() - 3}
-        border={true} borderStyle="single"
+        width="100%" height="100%"
+        border={true} borderStyle="rounded"
         borderColor={report()?.healthy ? theme.text.success : report() ? theme.text.warning : theme.border.default}
         backgroundColor={theme.bg.surface}
         title=" Doctor "
         titleAlignment="left"
+        flexDirection="column"
+        paddingX={1}
+        paddingY={1}
       >
         <Show when={loading()}>
-          <text x={3} y={2} fg={theme.text.secondary}>Running health checks...</text>
+          <text fg={theme.text.secondary}>Running health checks...</text>
         </Show>
 
         <Show when={fixing()}>
-          <text x={3} y={2} fg={theme.text.accent}>Running auto-fix...</text>
+          <text fg={theme.text.accent}>Running auto-fix...</text>
         </Show>
 
         <Show when={!loading() && !fixing() && !!error()}>
-          <text x={3} y={2} fg={theme.text.error}>Error: {error()}</text>
+          <text fg={theme.text.error}>Error: {error()}</text>
         </Show>
 
         <Show when={!loading() && !fixing() && !error() && !!report()}>
-          <text x={3} y={1} fg={theme.text.accent}>Health Checks</text>
-          <text x={3} y={2} fg={theme.border.subtle}>
-            {"\u2500".repeat(Math.max(w() - 10, 10))}
-          </text>
+          <text fg={theme.text.accent}>Health Checks</text>
+          <text fg={theme.border.subtle}>{"\u2500".repeat(Math.max(w() - 34, 10))}</text>
 
           <For each={report()!.checks}>
-            {(check: DoctorCheckResult, i) => {
-              const y = () => 4 + i();
+            {(check: DoctorCheckResult) => {
               return (
-                <box x={3} y={y()} width={w() - 8} height={1}>
-                  <text x={0} y={0} fg={statusColor(check.status)}>
+                <box width="100%" height={1} flexDirection="row">
+                  <text fg={statusColor(check.status)}>
                     {statusIcon(check.status)}
                   </text>
                   <text x={2} y={0} fg={theme.text.primary}>
@@ -115,12 +114,8 @@ export function DoctorView() {
             }}
           </For>
 
-          <text x={3} y={4 + checksLen()} fg={theme.border.subtle}>
-            {"\u2500".repeat(Math.max(w() - 10, 10))}
-          </text>
+          <text fg={theme.border.subtle}>{"\u2500".repeat(Math.max(w() - 34, 10))}</text>
           <text
-            x={3}
-            y={5 + checksLen()}
             fg={report()!.healthy ? theme.text.success : theme.text.warning}
           >
             {report()!.healthy
@@ -129,16 +124,13 @@ export function DoctorView() {
           </text>
 
           <Show when={fixLen() > 0}>
-            <text x={3} y={7 + checksLen()} fg={theme.text.accent}>Fix Results</text>
-            <text x={3} y={8 + checksLen()} fg={theme.border.subtle}>
-              {"\u2500".repeat(Math.max(w() - 10, 10))}
-            </text>
+            <text fg={theme.text.accent}>Fix Results</text>
+            <text fg={theme.border.subtle}>{"\u2500".repeat(Math.max(w() - 34, 10))}</text>
             <For each={fixResults()}>
-              {(fix: FixResult, i) => {
-                const y = () => 9 + checksLen() + i();
+              {(fix: FixResult) => {
                 return (
-                  <box x={3} y={y()} width={w() - 8} height={1}>
-                    <text x={0} y={0} fg={fix.success ? theme.text.success : theme.text.error}>
+                  <box width="100%" height={1} flexDirection="row">
+                    <text fg={fix.success ? theme.text.success : theme.text.error}>
                       {fix.success ? "\u2713" : "\u2717"}
                     </text>
                     <text x={2} y={0} fg={theme.text.primary}>
@@ -157,15 +149,12 @@ export function DoctorView() {
         </Show>
       </box>
 
-      <box x={1} y={h() - 3} width={w() - 2} height={1} backgroundColor={theme.bg.base}>
-        <text x={1} y={0} fg={theme.text.secondary}>r</text>
-        <text x={2} y={0} fg={theme.text.primary}>{":recheck  "}</text>
+      <box width="100%" height={1} backgroundColor={theme.bg.base} flexDirection="row" gap={2}>
+        <box flexDirection="row"><text fg={theme.text.secondary}>r</text><text fg={theme.text.primary}>:recheck</text></box>
         <Show when={!report()?.healthy}>
-          <text x={12} y={0} fg={theme.text.secondary}>f</text>
-          <text x={13} y={0} fg={theme.text.primary}>{":fix  "}</text>
+          <box flexDirection="row"><text fg={theme.text.secondary}>f</text><text fg={theme.text.primary}>:fix</text></box>
         </Show>
-        <text x={report()?.healthy ? 12 : 19} y={0} fg={theme.text.secondary}>Esc</text>
-        <text x={report()?.healthy ? 16 : 23} y={0} fg={theme.text.primary}>:back</text>
+        <box flexDirection="row"><text fg={theme.text.secondary}>Esc</text><text fg={theme.text.primary}>:back</text></box>
       </box>
     </box>
   );

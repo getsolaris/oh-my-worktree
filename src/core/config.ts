@@ -50,6 +50,24 @@ export interface LifecycleConfig {
   maxWorktrees?: number;
 }
 
+export interface SessionWindowConfig {
+  name: string;
+  command?: string;
+}
+
+export interface SessionLayoutConfig {
+  windows: SessionWindowConfig[];
+}
+
+export interface SessionConfig {
+  enabled?: boolean;
+  autoCreate?: boolean;
+  autoKill?: boolean;
+  prefix?: string;
+  defaultLayout?: string;
+  layouts?: Record<string, SessionLayoutConfig>;
+}
+
 export interface SharedDepsConfig {
   strategy?: "hardlink" | "symlink" | "copy";
   paths?: string[];
@@ -68,6 +86,9 @@ export interface OmwConfig {
   theme?: string;
   templates?: Record<string, TemplateConfig>;
   lifecycle?: LifecycleConfig;
+  sessions?: SessionConfig;
+  profiles?: Record<string, object>;
+  activeProfile?: string;
 }
 
 export interface ResolvedRepoConfig extends Omit<Required<RepoDefaults>, "sharedDeps"> {
@@ -144,7 +165,7 @@ export function validateConfig(data: unknown): ValidationError[] {
     });
   }
 
-  const validRootKeys = new Set(["version", "defaults", "repos", "$schema", "theme", "templates", "lifecycle"]);
+  const validRootKeys = new Set(["version", "defaults", "repos", "$schema", "theme", "templates", "lifecycle", "sessions", "profiles", "activeProfile"]);
   for (const key of Object.keys(obj)) {
     if (!validRootKeys.has(key)) {
       errors.push({ field: key, message: `Unknown field '${key}'` });
@@ -383,6 +404,107 @@ export function validateConfig(data: unknown): ValidationError[] {
     }
   }
 
+  if ("sessions" in obj && obj.sessions !== undefined) {
+    if (typeof obj.sessions !== "object" || obj.sessions === null) {
+      errors.push({ field: "sessions", message: "Must be an object" });
+    } else {
+      const sess = obj.sessions as Record<string, unknown>;
+      const validSessionKeys = new Set(["enabled", "autoCreate", "autoKill", "prefix", "defaultLayout", "layouts"]);
+      for (const key of Object.keys(sess)) {
+        if (!validSessionKeys.has(key)) {
+          errors.push({ field: `sessions.${key}`, message: `Unknown field '${key}'` });
+        }
+      }
+      for (const boolKey of ["enabled", "autoCreate", "autoKill"] as const) {
+        if (boolKey in sess && typeof sess[boolKey] !== "boolean") {
+          errors.push({ field: `sessions.${boolKey}`, message: "Must be a boolean" });
+        }
+      }
+      if ("prefix" in sess && typeof sess.prefix !== "string") {
+        errors.push({ field: "sessions.prefix", message: "Must be a string" });
+      }
+      if ("defaultLayout" in sess && typeof sess.defaultLayout !== "string") {
+        errors.push({ field: "sessions.defaultLayout", message: "Must be a string" });
+      }
+      if ("layouts" in sess && sess.layouts !== undefined) {
+        if (typeof sess.layouts !== "object" || sess.layouts === null || Array.isArray(sess.layouts)) {
+          errors.push({ field: "sessions.layouts", message: "Must be an object (key-value map)" });
+        } else {
+          const layouts = sess.layouts as Record<string, unknown>;
+          for (const [name, layout] of Object.entries(layouts)) {
+            const prefix = `sessions.layouts.${name}`;
+            if (typeof layout !== "object" || layout === null) {
+              errors.push({ field: prefix, message: "Must be an object" });
+              continue;
+            }
+            const l = layout as Record<string, unknown>;
+            if (!("windows" in l) || !Array.isArray(l.windows)) {
+              errors.push({ field: `${prefix}.windows`, message: "Required array field" });
+            } else {
+              for (let j = 0; j < l.windows.length; j++) {
+                const win = l.windows[j] as Record<string, unknown>;
+                if (typeof win !== "object" || win === null) {
+                  errors.push({ field: `${prefix}.windows[${j}]`, message: "Must be an object" });
+                  continue;
+                }
+                if (!("name" in win) || typeof win.name !== "string") {
+                  errors.push({ field: `${prefix}.windows[${j}].name`, message: "Required string field" });
+                }
+                if ("command" in win && typeof win.command !== "string") {
+                  errors.push({ field: `${prefix}.windows[${j}].command`, message: "Must be a string" });
+                }
+              }
+            }
+          }
+        }
+      }
+      if ("defaultLayout" in sess && typeof sess.defaultLayout === "string" && "layouts" in sess && typeof sess.layouts === "object" && sess.layouts !== null) {
+        const layouts = sess.layouts as Record<string, unknown>;
+        if (!(sess.defaultLayout as string in layouts)) {
+          errors.push({ field: "sessions.defaultLayout", message: `Layout '${sess.defaultLayout}' does not exist in sessions.layouts` });
+        }
+      }
+    }
+  }
+
+  if ("profiles" in obj && obj.profiles !== undefined) {
+    if (typeof obj.profiles !== "object" || obj.profiles === null || Array.isArray(obj.profiles)) {
+      errors.push({ field: "profiles", message: "Must be an object (key-value map)" });
+    } else {
+      const profiles = obj.profiles as Record<string, unknown>;
+      const validProfileKeys = new Set([
+        "defaults", "repos", "theme", "templates", "lifecycle", "sessions",
+      ]);
+
+      for (const [name, profile] of Object.entries(profiles)) {
+        const prefix = `profiles.${name}`;
+        if (typeof profile !== "object" || profile === null) {
+          errors.push({ field: prefix, message: "Must be an object" });
+          continue;
+        }
+        const p = profile as Record<string, unknown>;
+        for (const key of Object.keys(p)) {
+          if (!validProfileKeys.has(key)) {
+            errors.push({ field: `${prefix}.${key}`, message: `Unknown field '${key}'` });
+          }
+        }
+      }
+    }
+  }
+
+  if ("activeProfile" in obj && obj.activeProfile !== undefined) {
+    if (typeof obj.activeProfile !== "string") {
+      errors.push({ field: "activeProfile", message: "Must be a string" });
+    } else if ("profiles" in obj && obj.profiles !== undefined && typeof obj.profiles === "object" && obj.profiles !== null && !Array.isArray(obj.profiles)) {
+      const profiles = obj.profiles as Record<string, unknown>;
+      if (!(obj.activeProfile as string in profiles)) {
+        errors.push({ field: "activeProfile", message: `Profile '${obj.activeProfile}' does not exist in profiles` });
+      }
+    } else if (!("profiles" in obj) || obj.profiles === undefined) {
+      errors.push({ field: "activeProfile", message: "Cannot set activeProfile without profiles" });
+    }
+  }
+
   return errors;
 }
 
@@ -511,6 +633,18 @@ export function mergeTemplateWithRepo(
 
 export function getTemplateNames(config: OmwConfig): string[] {
   return Object.keys(config.templates ?? {});
+}
+
+export function getSessionConfig(config: OmwConfig): SessionConfig {
+  return config.sessions ?? {};
+}
+
+export function resolveSessionLayout(config: OmwConfig, layoutName?: string): SessionLayoutConfig | undefined {
+  const sessions = config.sessions;
+  if (!sessions?.layouts) return undefined;
+  const name = layoutName ?? sessions.defaultLayout;
+  if (!name) return undefined;
+  return sessions.layouts[name];
 }
 
 export function writeAtomically(filePath: string, content: string): void {

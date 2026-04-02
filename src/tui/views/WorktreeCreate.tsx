@@ -11,6 +11,7 @@ import { validateFocusPaths } from "../../core/monorepo.ts";
 import { matchHooksForFocus, executeGlobHooks } from "../../core/glob-hooks.ts";
 import { useKeyboard, useTerminalDimensions } from "@opentui/solid";
 import { basename, resolve } from "node:path";
+import { toast } from "@opentui-ui/toast/solid";
 import { theme } from "../themes.ts";
 
 type StepStatus = "pending" | "running" | "done" | "error";
@@ -298,6 +299,7 @@ export function WorktreeCreate() {
 
           setStatusMsg("Worktree created successfully!");
           setStep("done");
+          toast.success(`Worktree created: ${branch}`);
           git.refetch();
           setTimeout(() => {
             app.setActiveTab("list");
@@ -307,6 +309,7 @@ export function WorktreeCreate() {
             setStep("input");
           }, 1500);
         } catch (err) {
+          toast.error((err as Error).message);
           const currentSteps = progressSteps();
           const runningIdx = currentSteps.findIndex(s => s.status === "running");
           if (runningIdx >= 0) {
@@ -332,68 +335,52 @@ export function WorktreeCreate() {
   const inputFieldW = () => Math.max(w() - 10, 20);
 
   return (
-    <box x={0} y={0} width={w()} height={h()} backgroundColor={theme.bg.base}>
+    <box width="100%" height="100%" backgroundColor={theme.bg.base} flexDirection="column" gap={1}>
       <box
-        x={1} y={0}
-        width={w() - 2} height={h() - 2}
+        width="100%" height="100%"
         flexDirection="column"
-        border={true} borderStyle="single"
+        border={true} borderStyle="rounded"
         borderColor={step() === "done" ? theme.text.success : step() === "error" ? theme.text.error : theme.border.default}
         backgroundColor={theme.bg.surface}
         title=" Create Worktree "
         titleAlignment="left"
+        paddingX={1}
+        paddingY={1}
+        gap={1}
       >
         <Show when={step() === "input"}>
-          <box height={1} />
-
-          <box height={1}>
-            <text x={3} y={0} fg={theme.text.accent}>
-              {"\u25B6 New Worktree"}
-            </text>
-            <text x={18} y={0} fg={theme.text.secondary}>
-              {"in "}{activeRepoName()}
-            </text>
+          <box width="100%" height={1} flexDirection="row">
+            <text fg={theme.text.accent}>{"\u25B6 New Worktree"}</text>
+            <text fg={theme.text.secondary}>{" in "}{activeRepoName()}</text>
           </box>
 
-          <box height={1}>
-            <text x={3} y={0} fg={theme.border.subtle}>
-              {"\u2500".repeat(Math.max(w() - 10, 10))}
+          <text fg={theme.border.subtle}>{"\u2500".repeat(Math.max(w() - 10, 10))}</text>
+
+          <text fg={theme.text.secondary}>Branch name</text>
+
+          <box width={inputFieldW()} height={1}
+               backgroundColor={focusField() === "branch" ? theme.bg.elevated : theme.bg.surface}>
+            <text x={1} y={0} fg={theme.text.primary}>
+              {branchInput()}
             </text>
-          </box>
-
-          <box height={1} />
-
-          <box height={1}>
-            <text x={3} y={0} fg={theme.text.secondary}>
-              Branch name
-            </text>
-          </box>
-
-          <box height={1}>
-            <box x={3} y={0} width={inputFieldW()} height={1}
-                 backgroundColor={focusField() === "branch" ? theme.bg.elevated : theme.bg.surface}>
-              <text x={1} y={0} fg={theme.text.primary}>
-                {branchInput()}
+            <Show when={focusField() === "branch"}>
+              <text x={branchInput().length + 1} y={0} fg={theme.text.accent}>
+                {"\u2588"}
               </text>
-              <Show when={focusField() === "branch"}>
-                <text x={branchInput().length + 1} y={0} fg={theme.text.accent}>
-                  {"\u2588"}
-                </text>
-              </Show>
-            </box>
+            </Show>
           </box>
 
           <Show when={showPicker() && focusField() === "branch" && filteredBranches().length > 0}>
             <For each={filteredBranches()}>
               {(b, idx) => (
                 <box height={1}>
-                  <text x={4} y={0}
+                  <text x={1} y={0}
                     fg={idx() === branchPickerIdx() ? theme.text.accent : theme.text.secondary}
                     backgroundColor={idx() === branchPickerIdx() ? theme.select.focusedBg : undefined}>
                     {idx() === branchPickerIdx() ? "\u25B8 " : "  "}
                     {b.name}
                   </text>
-                  <text x={Math.max(4 + b.name.length + 4, 30)} y={0} fg={theme.border.subtle}>
+                  <text x={Math.max(1 + b.name.length + 4, 27)} y={0} fg={theme.border.subtle}>
                     {b.isRemote ? "(remote) " : ""}{b.lastCommitDate}
                   </text>
                 </box>
@@ -401,89 +388,49 @@ export function WorktreeCreate() {
             </For>
           </Show>
 
-          <box height={1}>
-            <text x={3} y={0} fg={theme.border.subtle}>
-              {"Tab to switch fields · ↑↓ to select branch"}
-            </text>
+          <text fg={theme.border.subtle}>{"Tab to switch fields \u00B7 \u2191\u2193 to select branch"}</text>
+
+          <box width="100%" height={1} flexDirection="row">
+            <text fg={theme.text.secondary}>{"Focus "}</text>
+            <text fg={theme.border.subtle}>{"(optional)"}</text>
           </box>
 
-          <box height={1}>
-            <text x={3} y={0} fg={theme.text.secondary}>
-              {"Focus "}
+          <box width={inputFieldW()} height={1}
+               backgroundColor={focusField() === "focus" ? theme.bg.elevated : theme.bg.surface}>
+            <text x={1} y={0} fg={theme.text.primary}>
+              {focusInput()}
             </text>
-            <text x={9} y={0} fg={theme.border.subtle}>
-              {"(optional)"}
-            </text>
-          </box>
-
-          <box height={1}>
-            <box x={3} y={0} width={inputFieldW()} height={1}
-                 backgroundColor={focusField() === "focus" ? theme.bg.elevated : theme.bg.surface}>
-              <text x={1} y={0} fg={theme.text.primary}>
-                {focusInput()}
+            <Show when={focusField() === "focus"}>
+              <text x={focusInput().length + 1} y={0} fg={theme.text.accent}>
+                {"\u2588"}
               </text>
-              <Show when={focusField() === "focus"}>
-                <text x={focusInput().length + 1} y={0} fg={theme.text.accent}>
-                  {"\u2588"}
-                </text>
-              </Show>
-            </box>
+            </Show>
           </box>
 
-          <box height={1}>
-            <text x={4} y={0} fg={theme.border.subtle}>
-              {"comma-separated paths, e.g. apps/web,apps/api"}
-            </text>
-          </box>
+          <text fg={theme.border.subtle}>{"comma-separated paths, e.g. apps/web,apps/api"}</text>
 
           <Show when={branchInput().length > 0}>
-            <box height={1}>
-              <text x={3} y={0} fg={theme.text.secondary}>
-                Target path
-              </text>
-            </box>
-            <box height={1}>
-              <text x={3} y={0} fg={theme.text.primary}>
-                {resolveTargetPath()}
-              </text>
-            </box>
-            <box height={1} />
+            <text fg={theme.text.secondary}>Target path</text>
+            <text fg={theme.text.primary}>{resolveTargetPath()}</text>
           </Show>
 
-          <box height={1}>
-            <text x={3} y={0} fg={theme.text.secondary}>
-              Type a branch name, e.g. feature/my-feature
-            </text>
-          </box>
+          <text fg={theme.text.secondary}>Type a branch name, e.g. feature/my-feature</text>
         </Show>
 
         <Show when={step() === "preview"}>
-          <box height={1} />
-
-          <box height={1}>
-            <text x={3} y={0} fg={theme.text.accent}>
-              {"\u25B6 Confirm Worktree"}
-            </text>
-          </box>
-
-          <box height={1}>
-            <text x={3} y={0} fg={theme.border.subtle}>
-              {"\u2500".repeat(Math.max(w() - 10, 10))}
-            </text>
-          </box>
-
-          <box height={1} />
+          <text fg={theme.text.accent}>{"\u25B6 Confirm Worktree"}</text>
+          <text fg={theme.border.subtle}>{"\u2500".repeat(Math.max(w() - 10, 10))}</text>
 
           <box height={1} flexDirection="row">
             <box width={14} height={1}>
-              <text x={3} y={0} fg={theme.text.secondary}>Branch</text>
+              <text fg={theme.text.secondary}>Branch</text>
             </box>
             <text fg={theme.text.accent}>{branchInput()}</text>
           </box>
 
           <box height={1} flexDirection="row">
             <box width={14} height={1}>
-              <text x={3} y={0} fg={theme.text.secondary}>Path</text>
+              <text fg={theme.text.secondary}>Path</text>
             </box>
             <text fg={theme.text.primary}>{resolvedPath()}</text>
           </box>
@@ -491,42 +438,23 @@ export function WorktreeCreate() {
           <Show when={focusInput().length > 0}>
             <box height={1} flexDirection="row">
               <box width={14} height={1}>
-                <text x={3} y={0} fg={theme.text.secondary}>Focus</text>
+                <text fg={theme.text.secondary}>Focus</text>
               </box>
               <text fg={theme.text.accent}>{focusInput()}</text>
             </box>
           </Show>
 
-          <box height={1} />
-
-          <box height={1}>
-            <text x={3} y={0} fg={theme.text.success}>
-              {"\u2713 Ready to create. Press Enter to confirm."}
-            </text>
-          </box>
+          <text fg={theme.text.success}>{"\u2713 Ready to create. Press Enter to confirm."}</text>
         </Show>
 
         <Show when={step() === "creating"}>
-          <box height={1} />
-
-          <box height={1}>
-            <text x={3} y={0} fg={theme.text.accent}>
-              {"\u25B6 Creating Worktree"}
-            </text>
-          </box>
-
-          <box height={1}>
-            <text x={3} y={0} fg={theme.border.subtle}>
-              {"\u2500".repeat(Math.max(w() - 10, 10))}
-            </text>
-          </box>
-
-          <box height={1} />
+          <text fg={theme.text.accent}>{"\u25B6 Creating Worktree"}</text>
+          <text fg={theme.border.subtle}>{"\u2500".repeat(Math.max(w() - 10, 10))}</text>
 
           <For each={progressSteps()}>
             {(step) => (
               <box height={1}>
-                <text x={3} y={0} fg={
+                <text fg={
                   step.status === "done" ? theme.text.success :
                   step.status === "running" ? theme.text.accent :
                   step.status === "error" ? theme.text.error :
@@ -538,7 +466,7 @@ export function WorktreeCreate() {
                    "\u25CB"}{" "}{step.label}
                 </text>
                 <Show when={step.message}>
-                  <text x={3 + step.label.length + 4} y={0} fg={theme.text.secondary}>
+                  <text x={step.label.length + 4} y={0} fg={theme.text.secondary}>
                     {step.message}
                   </text>
                 </Show>
@@ -548,32 +476,19 @@ export function WorktreeCreate() {
         </Show>
 
         <Show when={step() === "done"}>
-          <box height={1} />
-
-          <box height={1}>
-            <text x={3} y={0} fg={theme.text.success}>
-              {"\u25B6 Worktree Created"}
-            </text>
-          </box>
-
-          <box height={1}>
-            <text x={3} y={0} fg={theme.border.subtle}>
-              {"\u2500".repeat(Math.max(w() - 10, 10))}
-            </text>
-          </box>
-
-          <box height={1} />
+          <text fg={theme.text.success}>{"\u25B6 Worktree Created"}</text>
+          <text fg={theme.border.subtle}>{"\u2500".repeat(Math.max(w() - 10, 10))}</text>
 
           <box height={1} flexDirection="row">
             <box width={14} height={1}>
-              <text x={3} y={0} fg={theme.text.secondary}>Branch</text>
+              <text fg={theme.text.secondary}>Branch</text>
             </box>
             <text fg={theme.text.accent}>{branchInput()}</text>
           </box>
 
           <box height={1} flexDirection="row">
             <box width={14} height={1}>
-              <text x={3} y={0} fg={theme.text.secondary}>Path</text>
+              <text fg={theme.text.secondary}>Path</text>
             </box>
             <text fg={theme.text.primary}>{resolvedPath()}</text>
           </box>
@@ -581,88 +496,50 @@ export function WorktreeCreate() {
           <Show when={focusInput().length > 0}>
             <box height={1} flexDirection="row">
               <box width={14} height={1}>
-                <text x={3} y={0} fg={theme.text.secondary}>Focus</text>
+                <text fg={theme.text.secondary}>Focus</text>
               </box>
               <text fg={theme.text.accent}>{focusInput()}</text>
             </box>
           </Show>
 
-          <box height={1} />
-
-          <box height={1}>
-            <text x={3} y={0} fg={theme.text.success}>
-              {"\u2713 "}{statusMsg()}
-            </text>
-          </box>
+          <text fg={theme.text.success}>{"\u2713 "}{statusMsg()}</text>
         </Show>
 
         <Show when={step() === "error"}>
-          <box height={1} />
+          <text fg={theme.text.error}>{"\u25B6 Error"}</text>
+          <text fg={theme.border.subtle}>{"\u2500".repeat(Math.max(w() - 10, 10))}</text>
 
-          <box height={1}>
-            <text x={3} y={0} fg={theme.text.error}>
-              {"\u25B6 Error"}
+          <text fg={theme.text.error}>{"\u2717 Failed"}</text>
+
+          <box width={inputFieldW()} height={1} backgroundColor={theme.bg.elevated}>
+            <text x={1} y={0} fg={theme.text.primary}>
+              {statusMsg().slice(0, Math.max(inputFieldW() - 3, 10))}
             </text>
           </box>
 
-          <box height={1}>
-            <text x={3} y={0} fg={theme.border.subtle}>
-              {"\u2500".repeat(Math.max(w() - 10, 10))}
-            </text>
-          </box>
-
-          <box height={1} />
-
-          <box height={1}>
-            <text x={3} y={0} fg={theme.text.error}>
-              {"\u2717 Failed"}
-            </text>
-          </box>
-
-          <box height={1}>
-            <box x={3} y={0} width={inputFieldW()} height={1} backgroundColor={theme.bg.elevated}>
-              <text x={1} y={0} fg={theme.text.primary}>
-                {statusMsg().slice(0, Math.max(inputFieldW() - 3, 10))}
-              </text>
-            </box>
-          </box>
-
-          <box height={1} />
-
-          <box height={1}>
-            <text x={3} y={0} fg={theme.text.secondary}>
-              Press Enter or Escape to try again
-            </text>
-          </box>
+          <text fg={theme.text.secondary}>Press Enter or Escape to try again</text>
         </Show>
       </box>
 
-      <box x={1} y={h() - 2} width={w() - 2} height={1} backgroundColor={theme.bg.surface}>
+      <box width="100%" height={1} backgroundColor={theme.bg.base} flexDirection="row" gap={2}>
         <Show when={step() === "input"}>
-          <text x={2} y={0} fg={theme.text.secondary}>Enter</text>
-          <text x={7} y={0} fg={theme.text.primary}>:confirm{"  "}</text>
-          <text x={17} y={0} fg={theme.text.secondary}>Esc</text>
-          <text x={20} y={0} fg={theme.text.primary}>:cancel{"  "}</text>
-          <text x={29} y={0} fg={theme.text.secondary}>Tab</text>
-          <text x={32} y={0} fg={theme.text.primary}>:switch field</text>
+          <box flexDirection="row"><text fg={theme.text.secondary}>Enter</text><text fg={theme.text.primary}>:confirm</text></box>
+          <box flexDirection="row"><text fg={theme.text.secondary}>Esc</text><text fg={theme.text.primary}>:cancel</text></box>
+          <box flexDirection="row"><text fg={theme.text.secondary}>Tab</text><text fg={theme.text.primary}>:switch field</text></box>
         </Show>
         <Show when={step() === "preview"}>
-          <text x={2} y={0} fg={theme.text.success}>Enter</text>
-          <text x={7} y={0} fg={theme.text.primary}>:create{"  "}</text>
-          <text x={17} y={0} fg={theme.text.secondary}>Esc</text>
-          <text x={20} y={0} fg={theme.text.primary}>:back</text>
+          <box flexDirection="row"><text fg={theme.text.success}>Enter</text><text fg={theme.text.primary}>:create</text></box>
+          <box flexDirection="row"><text fg={theme.text.secondary}>Esc</text><text fg={theme.text.primary}>:back</text></box>
         </Show>
         <Show when={step() === "creating"}>
-          <text x={2} y={0} fg={theme.text.warning}>Creating worktree...</text>
+          <text fg={theme.text.warning}>Creating worktree...</text>
         </Show>
         <Show when={step() === "done"}>
-          <text x={2} y={0} fg={theme.text.success}>{"\u2713"} Done — returning to list</text>
+          <text fg={theme.text.success}>{"\u2713"} Done — returning to list</text>
         </Show>
         <Show when={step() === "error"}>
-          <text x={2} y={0} fg={theme.text.secondary}>Enter</text>
-          <text x={7} y={0} fg={theme.text.primary}>:retry{"  "}</text>
-          <text x={17} y={0} fg={theme.text.secondary}>Esc</text>
-          <text x={20} y={0} fg={theme.text.primary}>:back</text>
+          <box flexDirection="row"><text fg={theme.text.secondary}>Enter</text><text fg={theme.text.primary}>:retry</text></box>
+          <box flexDirection="row"><text fg={theme.text.secondary}>Esc</text><text fg={theme.text.primary}>:back</text></box>
         </Show>
       </box>
     </box>

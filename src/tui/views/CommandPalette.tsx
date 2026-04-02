@@ -166,82 +166,98 @@ export function CommandPalette() {
     }
   });
 
-  const w = () => dims().width;
-  const h = () => dims().height;
+  const dialogW = () => Math.max(50, Math.min(80, dims().width - 4));
+  const dialogH = () => Math.max(10, Math.min(filtered().length + 8, dims().height - 4));
+  const dialogX = () => Math.max(0, Math.floor((dims().width - dialogW()) / 2));
+  const dialogY = () => Math.max(0, Math.floor((dims().height - dialogH()) / 2));
+  const innerW = () => dialogW() - 4;
+  const listH = () => dialogH() - 8;
 
   return (
-    <box x={0} y={0} width={w()} height={h()} backgroundColor={theme.bg.base}>
+    <box
+      x={dialogX()}
+      y={dialogY()}
+      width={dialogW()}
+      height={dialogH()}
+      border={true}
+      borderStyle="rounded"
+      borderColor={theme.border.active}
+      backgroundColor={theme.bg.surface}
+      flexDirection="column"
+      paddingX={1}
+      paddingY={1}
+      title=" Command Palette "
+      titleAlignment="left"
+      position="absolute"
+    >
       <box
-        x={1} y={0}
-        width={w() - 2} height={h() - 1}
-        border={true} borderStyle="single"
-        borderColor={theme.border.active}
+        height={1}
+        width={innerW()}
         backgroundColor={theme.bg.elevated}
-        title=" Command Palette "
-        titleAlignment="left"
       >
-        <box
-          x={1} y={1}
-          width={w() - 6} height={1}
-          backgroundColor={theme.bg.overlay}
-        >
-          <text x={1} y={0} fg={theme.text.secondary}>{">"}</text>
-          <text x={3} y={0} fg={theme.text.primary}>{query()}</text>
-          <text x={3 + query().length} y={0} fg={theme.text.accent}>{"\u2588"}</text>
-        </box>
+        <text x={1} y={0} fg={theme.text.accent}>{">"}</text>
+        <text x={3} y={0} fg={theme.text.primary}>{query()}</text>
+        <text x={3 + query().length} y={0} fg={theme.text.accent}>{"\u2588"}</text>
+      </box>
 
-        <text x={1} y={2} fg={theme.border.subtle}>
-          {"\u2500".repeat(Math.max(w() - 6, 1))}
+      <box height={1} width={innerW()}>
+        <text fg={theme.border.subtle}>
+          {"\u2500".repeat(Math.max(innerW(), 1))}
         </text>
+      </box>
 
-        <box
-          x={1} y={3}
-          width={w() - 6} height={h() - 7}
-          backgroundColor={theme.bg.elevated}
-          flexDirection="column"
-        >
-          <For each={filtered().slice(0, h() - 7)}>
-            {(cmd, i) => {
-              const isSelected = () => i() === selectedIdx();
-              return (
-                <box
-                  height={1}
-                  width={w() - 6}
-                  backgroundColor={isSelected() ? theme.select.focusedBg : theme.bg.elevated}
-                  onMouseDown={() => {
-                    setSelectedIdx(i());
-                    cmd.action();
-                  }}
+      <box
+        width={innerW()}
+        height={listH()}
+        backgroundColor={theme.bg.surface}
+        flexDirection="column"
+      >
+        <For each={filtered().slice(0, listH())}>
+          {(cmd, i) => {
+            const isSelected = () => i() === selectedIdx();
+            return (
+              <box
+                height={1}
+                width={innerW()}
+                backgroundColor={isSelected() ? theme.select.focusedBg : theme.bg.surface}
+                onMouseDown={() => {
+                  setSelectedIdx(i());
+                  cmd.action();
+                }}
+              >
+                <text
+                  x={2} y={0}
+                  fg={isSelected() ? theme.tab.active : theme.text.primary}
                 >
-                  <text
-                    x={2} y={0}
-                    fg={isSelected() ? theme.tab.active : theme.text.primary}
-                  >
-                    {cmd.label}
-                  </text>
-                  <text
-                    x={Math.max(25, cmd.label.length + 4)} y={0}
-                    fg={theme.text.secondary}
-                  >
-                    {cmd.description}
-                  </text>
-                </box>
-              );
-            }}
-          </For>
-          <Show when={filtered().length === 0}>
-            <box height={1}>
-              <text x={2} y={0} fg={theme.text.secondary}>No commands found</text>
-            </box>
-          </Show>
-        </box>
+                  {cmd.label}
+                </text>
+                <text
+                  x={Math.max(25, cmd.label.length + 4)} y={0}
+                  fg={theme.text.secondary}
+                >
+                  {cmd.description}
+                </text>
+              </box>
+            );
+          }}
+        </For>
+        <Show when={filtered().length === 0}>
+          <box height={1}>
+            <text x={2} y={0} fg={theme.text.secondary}>No commands found</text>
+          </box>
+        </Show>
+      </box>
 
-        <text x={1} y={h() - 4} fg={theme.border.subtle}>
-          {"\u2500".repeat(Math.max(w() - 6, 1))}
+      <box height={1} width={innerW()}>
+        <text fg={theme.border.subtle}>
+          {"\u2500".repeat(Math.max(innerW(), 1))}
         </text>
-        <text x={2} y={h() - 3} fg={theme.text.secondary}>
-          {"\u2191\u2193:navigate  Enter:run  Esc:close"}
-        </text>
+      </box>
+
+      <box flexDirection="row" gap={2}>
+        <text fg={theme.text.secondary}>{"\u2191\u2193:navigate"}</text>
+        <text fg={theme.text.secondary}>{"Enter:run"}</text>
+        <text fg={theme.text.secondary}>{"Esc:close"}</text>
       </box>
     </box>
   );

@@ -1,12 +1,14 @@
 import type { CommandModule } from "yargs";
 import { GitWorktree } from "../../core/git.ts";
 import { GitError } from "../../core/types.ts";
-import { loadConfig, getRepoConfig } from "../../core/config.ts";
+import { loadConfig, getRepoConfig, getSessionConfig } from "../../core/config.ts";
 import { executeHooks } from "../../core/hooks.ts";
 import { readFocus } from "../../core/focus.ts";
 import { matchHooksForFocus, executeGlobHooks } from "../../core/glob-hooks.ts";
 import { basename } from "node:path";
 import * as readline from "node:readline";
+import { logActivity } from "../../core/activity-log.ts";
+import { closeSession, isTmuxAvailable } from "../../core/session.ts";
 
 async function confirm(question: string): Promise<boolean> {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -108,8 +110,21 @@ const cmd: CommandModule = {
         }
       }
 
+      const sessionConfig = getSessionConfig(config);
+      if (sessionConfig.autoKill) {
+        const tmuxOk = await isTmuxAvailable();
+        if (tmuxOk) {
+          const removeBranch = target.branch ?? branchOrPath;
+          const killed = await closeSession(removeBranch, target.path, sessionConfig.prefix);
+          if (killed) {
+            console.log("  ✓ Session killed");
+          }
+        }
+      }
+
       await GitWorktree.remove(target.path, { force }, mainRepoPath);
       console.log(`Removed worktree: ${target.path}`);
+      try { logActivity(mainRepoPath, { timestamp: new Date().toISOString(), event: "delete", branch: target.branch ?? branchOrPath, path: target.path }); } catch {}
       process.exit(0);
     } catch (err) {
       if (err instanceof GitError) {
