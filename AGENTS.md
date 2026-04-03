@@ -173,4 +173,5 @@ When adding or modifying a feature, **all** of the following must be updated bef
 7. **examples/** — add or update `examples/<command>.md`
 8. **AGENTS.md** — update architecture table, module map, key constraints if applicable
 9. **src/core/AGENTS.md** — update module map with new core modules
-10. **Typecheck + Tests** — `bun run typecheck` and `bun test` must pass
+10. **Skill references** — update `src/core/skill-templates.ts` when CLI commands change (add/remove/rename commands, change options, update config keys). This regenerates the AI agent skill files (`SKILL.md` + `references/*.md`) installed via `omw init --skill`.
+11. **Typecheck + Tests** — `bun run typecheck` and `bun test` must pass

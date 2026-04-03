@@ -75,6 +75,10 @@ describe("generateSkillContent", () => {
     expect(content).toContain("Create a feature worktree");
     expect(content).toContain("Clean up merged worktrees");
     expect(content).toContain("Run commands across worktrees");
+    expect(content).toContain("Review a GitHub PR");
+    expect(content).toContain("Use templates");
+    expect(content).toContain("Tmux session management");
+    expect(content).toContain("Shell integration setup");
     expect(content).toContain("## Command Overview");
     expect(content).toContain("| Command | Aliases | Description |");
     expect(content).toContain("| `add` |");
@@ -94,23 +98,28 @@ describe("generateSkillContent", () => {
     expect(content).toContain("references/add.md");
     expect(content).toContain("references/shell-init.md");
     expect(content).toContain("references/init.md");
+    expect(content).toContain("references/config-schema.md");
   });
 });
 
 describe("generateReferenceFiles", () => {
-  it("returns all 20 command reference files", () => {
+  it("returns all 20 command reference files plus config schema", () => {
     const references = generateReferenceFiles();
-    expect(references.size).toBe(20);
+    expect(references.size).toBe(21);
     expect(references.has("add.md")).toBeTrue();
     expect(references.has("remove.md")).toBeTrue();
     expect(references.has("shell-init.md")).toBeTrue();
     expect(references.has("init.md")).toBeTrue();
+    expect(references.has("config-schema.md")).toBeTrue();
   });
 
   it("each reference includes required sections", () => {
     const references = generateReferenceFiles();
 
     for (const [name, content] of references.entries()) {
+      if (name === "config-schema.md") {
+        continue;
+      }
       const command = name.replace(".md", "");
       expect(content).toContain(`# omw ${command}`);
       expect(content).toContain("## Synopsis");
@@ -120,6 +129,38 @@ describe("generateReferenceFiles", () => {
       expect(content).toContain("| Flag | Type | Alias | Description |");
       expect(content).toContain("```bash");
     }
+  });
+
+  it("renders Configuration section when config keys exist", () => {
+    const references = generateReferenceFiles();
+    const addRef = references.get("add.md");
+
+    expect(addRef).toBeDefined();
+    expect(addRef).toContain("## Configuration");
+    expect(addRef).toContain("Related config keys in `~/.config/oh-my-worktree/config.json`:");
+    expect(addRef).toContain("`defaults.worktreeDir` — Directory pattern for new worktrees");
+    expect(addRef).toContain("`sessions.layouts` — Tmux session layout definitions");
+  });
+
+  it("does not render Configuration section when config keys are empty", () => {
+    const references = generateReferenceFiles();
+    const diffRef = references.get("diff.md");
+
+    expect(diffRef).toBeDefined();
+    expect(diffRef).not.toContain("## Configuration");
+  });
+
+  it("includes config-schema reference with key sections and json examples", () => {
+    const references = generateReferenceFiles();
+    const schemaRef = references.get("config-schema.md");
+
+    expect(schemaRef).toBeDefined();
+    expect(schemaRef).toContain("# Configuration Schema");
+    expect(schemaRef).toContain("## Minimal Example");
+    expect(schemaRef).toContain("## Full Example");
+    expect(schemaRef).toContain("## Key Reference");
+    expect(schemaRef).toContain('"version": 1');
+    expect(schemaRef).toContain('"defaults": {');
   });
 });
 
@@ -131,7 +172,7 @@ describe("writeSkillFile", () => {
     expect(result.platform).toBe("codex");
     expect(result.filePath).toContain(join(".agents", "skills", "omw", "SKILL.md"));
     expect(result.referenceDir).toContain(join(".agents", "skills", "omw", "references"));
-    expect(result.referenceCount).toBe(20);
+    expect(result.referenceCount).toBe(21);
     expect(existsSync(result.filePath)).toBeTrue();
     expect(existsSync(result.referenceDir)).toBeTrue();
 
@@ -140,9 +181,10 @@ describe("writeSkillFile", () => {
     expect(content).toContain("oh-my-worktree");
 
     const referenceFiles = readdirSync(result.referenceDir);
-    expect(referenceFiles).toHaveLength(20);
+    expect(referenceFiles).toHaveLength(21);
     expect(referenceFiles).toContain("add.md");
     expect(referenceFiles).toContain("init.md");
+    expect(referenceFiles).toContain("config-schema.md");
   });
 
   it("creates claude-code skill in ~/.claude/skills/omw/", () => {
@@ -151,7 +193,7 @@ describe("writeSkillFile", () => {
     expect(result.action).toBe("created");
     expect(result.filePath).toContain(join(".claude", "skills", "omw", "SKILL.md"));
     expect(result.referenceDir).toContain(join(".claude", "skills", "omw", "references"));
-    expect(result.referenceCount).toBe(20);
+    expect(result.referenceCount).toBe(21);
     expect(existsSync(result.filePath)).toBeTrue();
     expect(existsSync(result.referenceDir)).toBeTrue();
   });
@@ -162,7 +204,7 @@ describe("writeSkillFile", () => {
     expect(result.action).toBe("created");
     expect(result.filePath).toContain(join(".config", "opencode", "skill", "omw", "SKILL.md"));
     expect(result.referenceDir).toContain(join(".config", "opencode", "skill", "omw", "references"));
-    expect(result.referenceCount).toBe(20);
+    expect(result.referenceCount).toBe(21);
     expect(existsSync(result.filePath)).toBeTrue();
     expect(existsSync(result.referenceDir)).toBeTrue();
   });
@@ -206,10 +248,11 @@ describe("writeSkillFile", () => {
       expect(content).toContain("description:");
       expect(content).toContain("## Command Overview");
       expect(existsSync(result.referenceDir)).toBeTrue();
-      expect(result.referenceCount).toBe(20);
+      expect(result.referenceCount).toBe(21);
       const referenceNames = readdirSync(result.referenceDir);
       expect(referenceNames).toContain("config.md");
       expect(referenceNames).toContain("open.md");
+      expect(referenceNames).toContain("config-schema.md");
     }
   });
 });
