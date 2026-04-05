@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, rmSync } from "fs";
-import { join, resolve } from "path";
-import { loadConfig } from "./config";
+import { basename, dirname, join, resolve } from "path";
+import { getConfigPath, loadConfig } from "./config";
 import { GitWorktree } from "./git";
 import { GitVersionError, type Worktree } from "./types";
 
@@ -22,6 +22,110 @@ export interface FixResult {
   action: string;
   success: boolean;
   detail?: string;
+}
+
+function expandHomePath(path: string): string {
+  const home = Bun.env.HOME ?? "~";
+  return path.replace(/^~(?=\/|$)/, home);
+}
+
+function escapeRegex(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+interface WorktreeBaseMatcher {
+  path: string;
+  matches(name: string): boolean;
+}
+
+function getConfiguredWorktreeBases(worktrees: Worktree[]): WorktreeBaseMatcher[] {
+  if (!existsSync(getConfigPath())) {
+    return [];
+  }
+
+  const mainWorktree = worktrees.find((wt) => wt.isMain);
+  if (!mainWorktree) {
+    return [];
+  }
+
+  const config = loadConfig();
+  const mainRepoPath = resolve(mainWorktree.path);
+  const repoName = basename(mainRepoPath);
+  const repoOverride = config.repos?.find((repo) => resolve(repo.path) === mainRepoPath);
+  const templates = [repoOverride?.worktreeDir ?? config.defaults?.worktreeDir]
+    .filter((template): template is string => typeof template === "string");
+
+  return templates
+    .map((template) => expandHomePath(template))
+    .filter((template) => !dirname(template).includes("{") && basename(template).includes("{"))
+    .map((template) => {
+      const baseName = basename(template);
+      const pattern = `^${escapeRegex(baseName)
+        .replace(/\\\{repo\\\}/g, escapeRegex(repoName))
+        .replace(/\\\{branch\\\}/g, ".+")}$`;
+
+      return {
+        path: resolve(dirname(template)),
+        matches: (name: string) => new RegExp(pattern).test(name),
+      };
+    });
+}
+
+function getTrackedWorktreeBaseDirs(worktrees: Worktree[]): string[] {
+  const bases = new Set<string>();
+
+  for (const wt of worktrees) {
+    if (!wt.isMain) {
+      bases.add(resolve(dirname(wt.path)));
+    }
+  }
+
+  return [...bases];
+}
+
+function findOrphanedDirectories(worktrees: Worktree[]): string[] {
+  const trackedPaths = new Set(worktrees.map((wt) => resolve(wt.path)));
+  const orphaned = new Set<string>();
+
+  for (const worktreeBase of getConfiguredWorktreeBases(worktrees)) {
+    if (!existsSync(worktreeBase.path)) {
+      continue;
+    }
+
+    const localDirs = readdirSync(worktreeBase.path, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .filter((entry) => worktreeBase.matches(entry.name))
+      .map((entry) => resolve(join(worktreeBase.path, entry.name)));
+
+    for (const dirPath of localDirs) {
+      if (!trackedPaths.has(dirPath)) {
+        orphaned.add(dirPath);
+      }
+    }
+  }
+
+  for (const worktreeBase of getTrackedWorktreeBaseDirs(worktrees)) {
+    if (!existsSync(worktreeBase)) {
+      continue;
+    }
+
+    const localDirs = readdirSync(worktreeBase, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => resolve(join(worktreeBase, entry.name)));
+
+    for (const dirPath of localDirs) {
+      if (!trackedPaths.has(dirPath)) {
+        orphaned.add(dirPath);
+      }
+    }
+  }
+
+  return [...orphaned];
+}
+
+function hasAnyWorktreeBase(worktrees: Worktree[]): boolean {
+  return getConfiguredWorktreeBases(worktrees).some((worktreeBase) => existsSync(worktreeBase.path))
+    || getTrackedWorktreeBaseDirs(worktrees).some((worktreeBase) => existsSync(worktreeBase));
 }
 
 async function getGitVersionString(): Promise<string | null> {
@@ -111,30 +215,22 @@ export function checkOrphanedDirectories(worktrees: Worktree[]): DoctorCheckResu
   const name = "Orphaned directories";
 
   try {
-    const home = Bun.env.HOME ?? "~";
-    const worktreeBase = join(home, ".omw", "worktrees");
+    const orphaned = findOrphanedDirectories(worktrees);
 
-    if (!existsSync(worktreeBase)) {
-      return { name, status: "pass", message: "no worktree directory" };
-    }
-
-    const localDirs = readdirSync(worktreeBase, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => resolve(join(worktreeBase, entry.name)));
-
-    const trackedPaths = new Set(worktrees.map((wt) => resolve(wt.path)));
-    const orphaned = localDirs.filter((dirPath) => !trackedPaths.has(dirPath));
-
-    if (orphaned.length > 0) {
+    if (orphaned.length === 0) {
       return {
         name,
-        status: "warn",
-        message: "orphaned worktree directories found",
-        detail: orphaned,
+        status: "pass",
+        message: hasAnyWorktreeBase(worktrees) ? "none" : "no worktree directory",
       };
     }
 
-    return { name, status: "pass", message: "none" };
+    return {
+      name,
+      status: "warn",
+      message: "orphaned worktree directories found",
+      detail: orphaned,
+    };
   } catch (err) {
     return { name, status: "fail", message: `Check failed: ${(err as Error).message}` };
   }
@@ -216,22 +312,7 @@ export async function fixOrphanedDirectories(cwd?: string): Promise<FixResult[]>
   const results: FixResult[] = [];
 
   try {
-    const home = Bun.env.HOME ?? "~";
-    const worktreeBase = join(home, ".omw", "worktrees");
-
-    if (!existsSync(worktreeBase)) {
-      return results;
-    }
-
-    const localDirs = readdirSync(worktreeBase, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => resolve(join(worktreeBase, entry.name)));
-
-    const trackedPaths = new Set(
-      (await GitWorktree.list(cwd).catch(() => [])).map((wt) => resolve(wt.path)),
-    );
-
-    const orphaned = localDirs.filter((dirPath) => !trackedPaths.has(dirPath));
+    const orphaned = findOrphanedDirectories(await GitWorktree.list(cwd).catch(() => []));
 
     for (const dirPath of orphaned) {
       try {

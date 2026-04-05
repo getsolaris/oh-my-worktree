@@ -21,6 +21,13 @@ export function Sidebar() {
   const worktrees = () => git.worktrees() ?? [];
   const selectedIdx = () => app.selectedWorktreeIndex();
 
+  const setSelectedByIndex = (idx: number) => {
+    const nextIdx = Math.max(0, Math.min(idx, Math.max(worktrees().length - 1, 0)));
+    const wt = worktrees()[nextIdx];
+    app.setSelectedWorktreeIndex(nextIdx);
+    app.setSelectedWorktreePath(wt?.path ?? null);
+  };
+
   const displayItems = createMemo<DisplayItem[]>(() => {
     const wts = worktrees();
     const multiRepo = git.isMultiRepo();
@@ -72,20 +79,20 @@ export function Sidebar() {
     const key = event.name;
     const wts = worktrees();
     if (key === "j" || key === "down") {
-      app.setSelectedWorktreeIndex(Math.min(selectedIdx() + 1, wts.length - 1));
+      setSelectedByIndex(Math.min(selectedIdx() + 1, wts.length - 1));
     }
     if (key === "k" || key === "up") {
-      app.setSelectedWorktreeIndex(Math.max(selectedIdx() - 1, 0));
+      setSelectedByIndex(Math.max(selectedIdx() - 1, 0));
     }
     if (key === "space") {
       const idx = selectedIdx();
       const wt = wts[idx];
       if (wt && !wt.isMain) {
-        app.toggleWorktreeSelection(idx);
+        app.toggleWorktreeSelection(wt.path);
       }
     }
     if (event.ctrl && key === "a") {
-      app.selectAllNonMain(wts.length, (i: number) => wts[i]?.isMain ?? false);
+      app.selectAllNonMain(wts.filter((wt) => !wt.isMain).map((wt) => wt.path));
     }
   });
 
@@ -137,13 +144,13 @@ export function Sidebar() {
 
             const wt = item.wt;
             const isFocused = () => item.flatIdx === selectedIdx();
-            const isChecked = () => app.selectedWorktrees().has(item.flatIdx);
+            const isChecked = () => app.selectedWorktrees().has(wt.path);
             return (
               <box
                 width="100%" height={1}
                 backgroundColor={isFocused() ? theme.select.focusedBg : isChecked() ? theme.bg.elevated : theme.bg.surface}
                 paddingX={1}
-                onMouseDown={() => app.setSelectedWorktreeIndex(item.flatIdx)}
+                onMouseDown={() => setSelectedByIndex(item.flatIdx)}
               >
                 <text x={0} y={0} fg={statusColor(wt)}>
                   {statusIcon(wt)}

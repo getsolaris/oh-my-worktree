@@ -526,6 +526,76 @@ function validateSharedDeps(obj: Record<string, unknown>, prefix: string, errors
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function cloneValue<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => cloneValue(item)) as T;
+  }
+
+  if (isRecord(value)) {
+    const cloned: Record<string, unknown> = {};
+    for (const [key, nested] of Object.entries(value)) {
+      cloned[key] = cloneValue(nested);
+    }
+    return cloned as T;
+  }
+
+  return value;
+}
+
+function deepMerge(base: unknown, override: unknown): unknown {
+  if (override === undefined) {
+    return cloneValue(base);
+  }
+
+  if (Array.isArray(override)) {
+    return override.map((item) => cloneValue(item));
+  }
+
+  if (!isRecord(override)) {
+    return cloneValue(override);
+  }
+
+  const baseRecord = isRecord(base) ? base : {};
+  const result: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(baseRecord)) {
+    result[key] = cloneValue(value);
+  }
+
+  for (const [key, value] of Object.entries(override)) {
+    if (value === undefined) {
+      continue;
+    }
+
+    const baseValue = baseRecord[key];
+    if (isRecord(baseValue) && isRecord(value)) {
+      result[key] = deepMerge(baseValue, value);
+      continue;
+    }
+
+    result[key] = cloneValue(value);
+  }
+
+  return result;
+}
+
+function applyActiveProfile(config: OmwConfig): OmwConfig {
+  if (!config.activeProfile) {
+    return structuredClone(config);
+  }
+
+  const profile = config.profiles?.[config.activeProfile];
+  if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
+    throw new Error(`Active profile '${config.activeProfile}' does not exist`);
+  }
+
+  return deepMerge(config, profile) as OmwConfig;
+}
+
 export function loadConfig(overridePath?: string): OmwConfig {
   const configPath = overridePath ?? getConfigPath();
 
@@ -556,7 +626,14 @@ export function loadConfig(overridePath?: string): OmwConfig {
     throw new Error(`Config validation failed: ${message}`);
   }
 
-  return parsed as OmwConfig;
+  const resolved = applyActiveProfile(parsed as OmwConfig);
+  const resolvedErrors = validateConfig(resolved);
+  if (resolvedErrors.length > 0) {
+    const message = resolvedErrors.map((e) => `${e.field}: ${e.message}`).join("; ");
+    throw new Error(`Config validation failed after applying activeProfile: ${message}`);
+  }
+
+  return resolved;
 }
 
 export function getRepoConfig(config: OmwConfig, repoPath: string): ResolvedRepoConfig {

@@ -237,7 +237,7 @@ export async function listSessions(prefix?: string): Promise<TmuxSessionStatus[]
     const output = await runTmux([
       "list-sessions",
       "-F",
-      "#{session_name}\x1f#{session_windows}\x1f#{session_attached}\x1f#{session_created}",
+      "#{session_name}|#{session_windows}|#{session_attached}|#{session_created}",
     ]);
 
     if (!output) return [];
@@ -247,7 +247,7 @@ export async function listSessions(prefix?: string): Promise<TmuxSessionStatus[]
       .filter(Boolean)
        .filter((line) => line.startsWith(`${p}_`) || line.startsWith(`${p}:`))
       .map((line) => {
-        const [name, windows, attached, created] = line.split("\x1f");
+        const [name, windows, attached, created] = line.split("|");
         return {
           name: name ?? "",
           windows: parseInt(windows ?? "0", 10),

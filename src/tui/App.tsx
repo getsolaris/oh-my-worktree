@@ -1,4 +1,4 @@
-import { createSignal, Show } from "solid-js";
+import { createEffect, createSignal, Show } from "solid-js";
 import { render, useKeyboard, useTerminalDimensions, useRenderer } from "@opentui/solid";
 import "@opentui-ui/toast/solid";
 import { AppProvider, useApp } from "./context/AppContext.tsx";
@@ -60,6 +60,50 @@ function AppShell(props: { repoPath: string }) {
   const [showHelp, setShowHelp] = createSignal(false);
   const dims = useTerminalDimensions();
 
+  const selectedWorktree = () => {
+    const wts = git.worktrees() ?? [];
+    const selectedPath = app.selectedWorktreePath();
+    if (selectedPath) {
+      const match = wts.find((wt) => wt.path === selectedPath);
+      if (match) return match;
+    }
+    return wts[app.selectedWorktreeIndex()];
+  };
+
+  createEffect(() => {
+    const wts = git.worktrees() ?? [];
+    const paths = wts.map((wt) => wt.path);
+
+    app.pruneSelectedWorktrees(paths);
+
+    if (wts.length === 0) {
+      if (app.selectedWorktreeIndex() !== 0) app.setSelectedWorktreeIndex(0);
+      if (app.selectedWorktreePath() !== null) app.setSelectedWorktreePath(null);
+      return;
+    }
+
+    const selectedPath = app.selectedWorktreePath();
+    if (selectedPath) {
+      const matchedIdx = wts.findIndex((wt) => wt.path === selectedPath);
+      if (matchedIdx >= 0) {
+        if (matchedIdx !== app.selectedWorktreeIndex()) {
+          app.setSelectedWorktreeIndex(matchedIdx);
+        }
+        return;
+      }
+    }
+
+    const nextIdx = Math.min(app.selectedWorktreeIndex(), wts.length - 1);
+    const nextPath = wts[nextIdx]?.path ?? null;
+
+    if (nextIdx !== app.selectedWorktreeIndex()) {
+      app.setSelectedWorktreeIndex(nextIdx);
+    }
+    if (nextPath !== app.selectedWorktreePath()) {
+      app.setSelectedWorktreePath(nextPath);
+    }
+  });
+
   useKeyboard((event: any) => {
     if (app.showCommandPalette()) return;
     const key = event.name;
@@ -82,16 +126,14 @@ function AppShell(props: { repoPath: string }) {
       if (key === "a") { app.setActiveTab("add"); return; }
       if (key === "r") { git.refetch(); return; }
       if (key === "d") {
-        const wts = git.worktrees() ?? [];
-        const selected = wts[app.selectedWorktreeIndex()];
+        const selected = selectedWorktree();
         if (selected && !selected.isMain) {
           app.setShowRemove(true);
         }
         return;
       }
       if (key === "o") {
-        const wts = git.worktrees() ?? [];
-        const selected = wts[app.selectedWorktreeIndex()];
+        const selected = selectedWorktree();
         if (selected) {
           const editor = process.env.VISUAL || process.env.EDITOR || detectEditorBin();
           if (editor) {

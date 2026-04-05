@@ -98,7 +98,21 @@ const cmd: CommandModule = {
     }
 
     if (argv.profile && argv.activate) {
-      setActiveProfile(argv.profile as string);
+      try {
+        const config = loadConfig();
+        const profile = argv.profile as string;
+
+        if (!listProfiles(config).includes(profile)) {
+          console.error(`Error: profile '${profile}' does not exist.`);
+          process.exit(1);
+        }
+
+        setActiveProfile(profile);
+      } catch (err) {
+        console.error(`Error loading config: ${(err as Error).message}`);
+        process.exit(1);
+      }
+
       process.exit(0);
     }
 

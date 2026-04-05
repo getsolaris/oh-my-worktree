@@ -63,13 +63,19 @@ export function WorktreeCreate() {
 
   const activeRepoPath = () => {
     const wts = git.worktrees() ?? [];
-    const selected = wts[app.selectedWorktreeIndex()];
+    const selectedPath = app.selectedWorktreePath();
+    const selected = selectedPath
+      ? wts.find((wt) => wt.path === selectedPath) ?? wts[app.selectedWorktreeIndex()]
+      : wts[app.selectedWorktreeIndex()];
     return selected?.repoPath ?? app.repoPath();
   };
 
   const activeRepoName = () => {
     const wts = git.worktrees() ?? [];
-    const selected = wts[app.selectedWorktreeIndex()];
+    const selectedPath = app.selectedWorktreePath();
+    const selected = selectedPath
+      ? wts.find((wt) => wt.path === selectedPath) ?? wts[app.selectedWorktreeIndex()]
+      : wts[app.selectedWorktreeIndex()];
     return selected?.repoName ?? app.repoPath().split("/").pop() ?? "";
   };
 
@@ -85,6 +91,8 @@ export function WorktreeCreate() {
   };
 
   useKeyboard(async (event: any) => {
+    if (app.activeTab() !== "add") return;
+    if (app.showCommandPalette()) return;
     const key = event.name;
 
     if (key === "escape") {

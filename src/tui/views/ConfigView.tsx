@@ -22,6 +22,8 @@ export function ConfigView() {
   const [message, setMessage] = createSignal("");
 
   useKeyboard((event: any) => {
+    if (app.activeTab() !== "config") return;
+    if (app.showCommandPalette()) return;
     const key = event.name;
     if (key === "e") {
       const editor = process.env.EDITOR ?? process.env.VISUAL ?? "vi";

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { join } from "path";
-import { rmSync, writeFileSync } from "fs";
+import { basename, join } from "path";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "fs";
 import { cleanupTempDirs, createTempDir, createTempRepo, runGit } from "./test-helpers";
 import {
   checkConfig,
@@ -9,13 +9,30 @@ import {
   checkLockStatus,
   checkOrphanedDirectories,
   checkStaleWorktrees,
+  fixOrphanedDirectories,
   runAllChecks,
 } from "./doctor";
 import { GitWorktree } from "./git";
 import { invalidateGitCache } from "./git";
 
+const originalXdgConfigHome = Bun.env.XDG_CONFIG_HOME;
+const originalHome = Bun.env.HOME;
+
 afterEach(() => {
   invalidateGitCache();
+
+  if (originalXdgConfigHome === undefined) {
+    delete Bun.env.XDG_CONFIG_HOME;
+  } else {
+    Bun.env.XDG_CONFIG_HOME = originalXdgConfigHome;
+  }
+
+  if (originalHome === undefined) {
+    delete Bun.env.HOME;
+  } else {
+    Bun.env.HOME = originalHome;
+  }
+
   cleanupTempDirs();
 });
 
@@ -129,6 +146,63 @@ describe("checkOrphanedDirectories", () => {
     const result = checkOrphanedDirectories(worktrees);
     expect(result.name).toBe("Orphaned directories");
     expect(result.status).toBe("pass");
+  });
+
+  it("detects orphaned directories under configured custom worktreeDir", async () => {
+    const repoPath = await createTempRepo();
+    const configRoot = createTempDir("omw-doctor-config-");
+    const xdgConfigHome = join(configRoot, "xdg");
+    const configDir = join(xdgConfigHome, "oh-my-worktree");
+    const customWorktreeBase = join(configRoot, "custom-worktrees");
+    const orphanPath = join(customWorktreeBase, `${basename(repoPath)}-orphan`);
+
+    Bun.env.XDG_CONFIG_HOME = xdgConfigHome;
+    Bun.env.HOME = configRoot;
+
+    mkdirSync(configDir, { recursive: true });
+    mkdirSync(orphanPath, { recursive: true });
+    writeFileSync(join(configDir, "config.json"), JSON.stringify({
+      version: 1,
+      defaults: {
+        worktreeDir: `${customWorktreeBase}/{repo}-{branch}`,
+      },
+    }, null, 2), "utf-8");
+    writeFileSync(join(orphanPath, "marker.txt"), "orphan");
+
+    const worktrees = await GitWorktree.list(repoPath);
+    const result = checkOrphanedDirectories(worktrees);
+
+    expect(result.status).toBe("warn");
+    expect(result.detail).toContain(orphanPath);
+  });
+});
+
+describe("fixOrphanedDirectories", () => {
+  it("removes orphaned directories under configured custom worktreeDir", async () => {
+    const repoPath = await createTempRepo();
+    const configRoot = createTempDir("omw-doctor-fix-");
+    const xdgConfigHome = join(configRoot, "xdg");
+    const configDir = join(xdgConfigHome, "oh-my-worktree");
+    const customWorktreeBase = join(configRoot, "custom-worktrees");
+    const orphanPath = join(customWorktreeBase, `${basename(repoPath)}-orphan`);
+
+    Bun.env.XDG_CONFIG_HOME = xdgConfigHome;
+    Bun.env.HOME = configRoot;
+
+    mkdirSync(configDir, { recursive: true });
+    mkdirSync(orphanPath, { recursive: true });
+    writeFileSync(join(configDir, "config.json"), JSON.stringify({
+      version: 1,
+      defaults: {
+        worktreeDir: `${customWorktreeBase}/{repo}-{branch}`,
+      },
+    }, null, 2), "utf-8");
+    writeFileSync(join(orphanPath, "marker.txt"), "orphan");
+
+    const results = await fixOrphanedDirectories(repoPath);
+
+    expect(results.some((result) => result.success && result.detail === orphanPath)).toBeTrue();
+    expect(existsSync(orphanPath)).toBeFalse();
   });
 });
 

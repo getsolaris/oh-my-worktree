@@ -7,6 +7,8 @@ interface AppState {
   setActiveTab: (tab: TabId) => void;
   selectedWorktreeIndex: () => number;
   setSelectedWorktreeIndex: (idx: number) => void;
+  selectedWorktreePath: () => string | null;
+  setSelectedWorktreePath: (path: string | null) => void;
   showRemove: () => boolean;
   setShowRemove: (v: boolean) => void;
   showCommandPalette: () => boolean;
@@ -15,9 +17,10 @@ interface AppState {
   setShowDetailView: (v: boolean) => void;
   repoPath: () => string;
   repoPaths: () => string[];
-  selectedWorktrees: () => Set<number>;
-  toggleWorktreeSelection: (idx: number) => void;
-  selectAllNonMain: (worktreeCount: number, isMainAt: (idx: number) => boolean) => void;
+  selectedWorktrees: () => Set<string>;
+  toggleWorktreeSelection: (path: string) => void;
+  selectAllNonMain: (paths: string[]) => void;
+  pruneSelectedWorktrees: (validPaths: string[]) => void;
   clearSelection: () => void;
   showBulkActions: () => boolean;
   setShowBulkActions: (v: boolean) => void;
@@ -32,32 +35,45 @@ export function AppProvider(props: {
 }) {
   const [activeTab, setActiveTab] = createSignal<TabId>("list");
   const [selectedWorktreeIndex, setSelectedWorktreeIndex] = createSignal(0);
+  const [selectedWorktreePath, setSelectedWorktreePath] = createSignal<string | null>(null);
   const [showRemove, setShowRemove] = createSignal(false);
   const [showCommandPalette, setShowCommandPalette] = createSignal(false);
   const [showDetailView, setShowDetailView] = createSignal(false);
-  const [selectedWorktrees, setSelectedWorktrees] = createSignal<Set<number>>(new Set());
+  const [selectedWorktrees, setSelectedWorktrees] = createSignal<Set<string>>(new Set());
   const [showBulkActions, setShowBulkActions] = createSignal(false);
 
-  const toggleWorktreeSelection = (idx: number) => {
+  const toggleWorktreeSelection = (path: string) => {
     const next = new Set(selectedWorktrees());
-    if (next.has(idx)) {
-      next.delete(idx);
+    if (next.has(path)) {
+      next.delete(path);
     } else {
-      next.add(idx);
+      next.add(path);
     }
     setSelectedWorktrees(next);
   };
 
-  const selectAllNonMain = (worktreeCount: number, isMainAt: (idx: number) => boolean) => {
-    const next = new Set<number>();
-    for (let i = 0; i < worktreeCount; i++) {
-      if (!isMainAt(i)) next.add(i);
+  const selectAllNonMain = (paths: string[]) => {
+    setSelectedWorktrees(new Set(paths));
+  };
+
+  const pruneSelectedWorktrees = (validPaths: string[]) => {
+    const valid = new Set(validPaths);
+    const current = selectedWorktrees();
+    const next = new Set<string>();
+
+    for (const path of current) {
+      if (valid.has(path)) {
+        next.add(path);
+      }
     }
-    setSelectedWorktrees(next);
+
+    if (next.size !== current.size) {
+      setSelectedWorktrees(next);
+    }
   };
 
   const clearSelection = () => {
-    setSelectedWorktrees(new Set<number>());
+    setSelectedWorktrees(new Set<string>());
   };
 
   return (
@@ -67,6 +83,8 @@ export function AppProvider(props: {
         setActiveTab,
         selectedWorktreeIndex,
         setSelectedWorktreeIndex,
+        selectedWorktreePath,
+        setSelectedWorktreePath,
         showRemove,
         setShowRemove,
         showCommandPalette,
@@ -78,6 +96,7 @@ export function AppProvider(props: {
         selectedWorktrees,
         toggleWorktreeSelection,
         selectAllNonMain,
+        pruneSelectedWorktrees,
         clearSelection,
         showBulkActions,
         setShowBulkActions,

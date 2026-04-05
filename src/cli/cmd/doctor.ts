@@ -92,6 +92,8 @@ const cmd: CommandModule = {
       if (recheck.healthy) {
         console.log("All checks now pass.");
       }
+
+      process.exit(recheck.healthy ? 0 : 1);
     }
 
     process.exit(report.healthy ? 0 : 1);

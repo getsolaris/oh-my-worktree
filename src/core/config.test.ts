@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { existsSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
 import {
   expandTemplate,
@@ -11,7 +11,22 @@ import {
 } from "./config";
 import { cleanupTempDirs, createTempDir } from "./test-helpers";
 
+const originalXdgConfigHome = Bun.env.XDG_CONFIG_HOME;
+const originalHome = Bun.env.HOME;
+
 afterEach(() => {
+  if (originalXdgConfigHome === undefined) {
+    delete Bun.env.XDG_CONFIG_HOME;
+  } else {
+    Bun.env.XDG_CONFIG_HOME = originalXdgConfigHome;
+  }
+
+  if (originalHome === undefined) {
+    delete Bun.env.HOME;
+  } else {
+    Bun.env.HOME = originalHome;
+  }
+
   cleanupTempDirs();
 });
 
@@ -301,6 +316,58 @@ describe("loadConfig", () => {
     writeFileSync(configPath, JSON.stringify({ version: 2 }, null, 2), "utf-8");
 
     expect(() => loadConfig(configPath)).toThrow("Config validation failed");
+  });
+
+  it("applies activeProfile overrides safely", () => {
+    const dir = createTempDir("omw-config-profile-");
+    const xdgConfigHome = join(dir, "xdg");
+    const configDir = join(xdgConfigHome, "oh-my-worktree");
+    const configPath = join(configDir, "config.json");
+
+    mkdirSync(configDir, { recursive: true });
+    Bun.env.XDG_CONFIG_HOME = xdgConfigHome;
+    Bun.env.HOME = dir;
+
+    writeFileSync(configPath, JSON.stringify({
+      version: 1,
+      defaults: {
+        worktreeDir: "~/.omw/worktrees/{repo}-{branch}",
+        autoUpstream: true,
+      },
+      profiles: {
+        work: {
+          defaults: {
+            autoUpstream: false,
+          },
+          theme: "nord",
+        },
+      },
+      activeProfile: "work",
+    }, null, 2), "utf-8");
+
+    const loaded = loadConfig();
+
+    expect(loaded.defaults?.autoUpstream).toBeFalse();
+    expect(loaded.theme).toBe("nord");
+    expect(loaded.activeProfile).toBe("work");
+  });
+
+  it("throws when activeProfile produces an invalid resolved config", () => {
+    const dir = createTempDir("omw-config-profile-invalid-");
+    const configPath = join(dir, "config.json");
+    writeFileSync(configPath, JSON.stringify({
+      version: 1,
+      profiles: {
+        broken: {
+          defaults: {
+            autoUpstream: "nope",
+          },
+        },
+      },
+      activeProfile: "broken",
+    }, null, 2), "utf-8");
+
+    expect(() => loadConfig(configPath)).toThrow("Config validation failed after applying activeProfile");
   });
 });
 

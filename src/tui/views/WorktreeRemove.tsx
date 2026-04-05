@@ -18,6 +18,11 @@ export function WorktreeRemove(props: { w: number; h: number }) {
 
   const targetWorktree = () => {
     const wts = git.worktrees() ?? [];
+    const selectedPath = app.selectedWorktreePath();
+    if (selectedPath) {
+      const match = wts.find((wt) => wt.path === selectedPath);
+      if (match) return match;
+    }
     return wts[app.selectedWorktreeIndex()];
   };
 
@@ -52,17 +57,22 @@ export function WorktreeRemove(props: { w: number; h: number }) {
       setMessage("Removed successfully!");
       toast.success("Worktree removed");
 
+      const wts = git.worktrees() ?? [];
       const currentIdx = app.selectedWorktreeIndex();
+      const fallbackWt = wts[currentIdx - 1] ?? wts[currentIdx + 1] ?? null;
       if (currentIdx > 0) {
         app.setSelectedWorktreeIndex(currentIdx - 1);
+      } else {
+        app.setSelectedWorktreeIndex(0);
       }
+      app.setSelectedWorktreePath(fallbackWt?.path ?? null);
 
       git.refetch();
       setTimeout(closeDialog, 1000);
     } catch (err) {
       const errMsg = (err as Error).message;
       if (!force && errMsg.includes("dirty")) {
-        setMessage("Worktree has changes. Press f to force remove.");
+        setMessage("Worktree has changes. Press Enter to force remove.");
         setRemoving(false);
         setConfirmForce(true);
       } else {
@@ -75,6 +85,7 @@ export function WorktreeRemove(props: { w: number; h: number }) {
 
   useKeyboard(async (event: any) => {
     if (!app.showRemove()) return;
+    if (app.showCommandPalette()) return;
     const key = event.name;
     if (key === "escape") { closeDialog(); return; }
     if (confirmForce() && (key === "return" || key === "enter")) { setConfirmForce(false); await doRemove(true); return; }

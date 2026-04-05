@@ -21,13 +21,23 @@ export function WorktreeList() {
   const git = useGit();
   const dims = useTerminalDimensions();
 
-  const selectedWt = () => (git.worktrees() ?? [])[app.selectedWorktreeIndex()];
+  const selectedWt = () => {
+    const wts = git.worktrees() ?? [];
+    const selectedPath = app.selectedWorktreePath();
+    if (selectedPath) {
+      const match = wts.find((wt) => wt.path === selectedPath);
+      if (match) return match;
+    }
+    return wts[app.selectedWorktreeIndex()];
+  };
   const w = () => dims().width;
   const h = () => dims().height;
 
   const LABEL_W = 14;
 
   const [extra, setExtra] = createSignal<WorktreeExtra | null>(null);
+  const [extraLoading, setExtraLoading] = createSignal(false);
+  const [extraError, setExtraError] = createSignal("");
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
   onCleanup(() => {
@@ -42,23 +52,41 @@ export function WorktreeList() {
 
         if (!path) {
           setExtra(null);
+          setExtraLoading(false);
+          setExtraError("");
           return;
         }
+
+        setExtra(null);
+        setExtraLoading(true);
+        setExtraError("");
 
         debounceTimer = setTimeout(async () => {
           const wt = selectedWt();
           if (!wt || wt.path !== path) return;
 
-          const [aheadBehind, lastCommit, dirtyCount] = await Promise.all([
-            wt.branch
-              ? GitWorktree.getAheadBehind(wt.branch, wt.path)
-              : Promise.resolve({ ahead: 0, behind: 0 }),
-            GitWorktree.getLastCommit(wt.path),
-            GitWorktree.getDirtyCount(wt.path),
-          ]);
+          try {
+            const [aheadBehind, lastCommit, dirtyCount] = await Promise.all([
+              wt.branch
+                ? GitWorktree.getAheadBehind(wt.branch, wt.path)
+                : Promise.resolve({ ahead: 0, behind: 0 }),
+              GitWorktree.getLastCommit(wt.path),
+              GitWorktree.getDirtyCount(wt.path),
+            ]);
 
-          if (selectedWt()?.path === path) {
-            setExtra({ aheadBehind, lastCommit, dirtyCount });
+            if (selectedWt()?.path === path) {
+              setExtra({ aheadBehind, lastCommit, dirtyCount });
+              setExtraError("");
+            }
+          } catch (err) {
+            if (selectedWt()?.path === path) {
+              setExtra(null);
+              setExtraError((err as Error).message);
+            }
+          } finally {
+            if (selectedWt()?.path === path) {
+              setExtraLoading(false);
+            }
           }
         }, DEBOUNCE_MS);
       },
@@ -66,6 +94,8 @@ export function WorktreeList() {
   );
 
   const syncLabel = () => {
+    if (extraLoading()) return "Loading...";
+    if (extraError()) return "Unavailable";
     const e = extra();
     if (!e) return "";
     const parts: string[] = [];
@@ -185,7 +215,11 @@ export function WorktreeList() {
                 <text fg={theme.text.secondary}>Sync</text>
               </box>
               <text fg={
-                extra()?.aheadBehind?.ahead || extra()?.aheadBehind?.behind
+                extraError()
+                  ? theme.text.error
+                  : extraLoading()
+                    ? theme.text.secondary
+                    : extra()?.aheadBehind?.ahead || extra()?.aheadBehind?.behind
                   ? theme.text.warning
                   : theme.text.success
               }>

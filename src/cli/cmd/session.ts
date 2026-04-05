@@ -7,8 +7,10 @@ import {
   isTmuxAvailable,
   openSession,
   closeSession,
+  killSession,
   listSessions,
   readSessionMeta,
+  removeSessionMeta,
   toSessionName,
 } from "../../core/session.ts";
 
@@ -185,13 +187,15 @@ async function handleKillAll(
   let killed = 0;
   for (const s of sessions) {
     const wt = worktrees.find((w) => {
+      const meta = readSessionMeta(w.path);
       const branch = w.branch ?? basename(w.path);
-      return toSessionName(branch, prefix) === s.name;
+      return meta?.name === s.name || toSessionName(branch, prefix) === s.name;
     });
-    const branch = wt?.branch ?? basename(wt?.path ?? "unknown");
-    const path = wt?.path ?? "";
 
-    await closeSession(branch, path, prefix);
+    await killSession(s.name);
+    if (wt) {
+      removeSessionMeta(wt.path);
+    }
     killed++;
     console.log(`  ✓ Killed ${s.name}`);
   }

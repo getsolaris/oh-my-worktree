@@ -38,8 +38,18 @@
           "type": "array",
           "items": { "type": "string" },
           "default": []
+        },
+        "autoUpstream": {
+          "type": "boolean",
+          "default": true
+        },
+        "sharedDeps": {
+          "$ref": "#/definitions/sharedDeps"
         }
       }
+    },
+    "theme": {
+      "type": "string"
     },
     "sessions": {
       "type": "object",
@@ -113,6 +123,8 @@
           "linkFiles": { "type": "array", "items": { "type": "string" } },
           "postCreate": { "type": "array", "items": { "type": "string" } },
           "postRemove": { "type": "array", "items": { "type": "string" } },
+          "autoUpstream": { "type": "boolean" },
+          "sharedDeps": { "$ref": "#/definitions/sharedDeps" },
           "monorepo": {
             "type": "object",
             "additionalProperties": false,
@@ -161,6 +173,69 @@
               }
             }
           }
+        }
+      }
+    },
+    "templates": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "worktreeDir": { "type": "string" },
+          "copyFiles": { "type": "array", "items": { "type": "string" } },
+          "linkFiles": { "type": "array", "items": { "type": "string" } },
+          "postCreate": { "type": "array", "items": { "type": "string" } },
+          "postRemove": { "type": "array", "items": { "type": "string" } },
+          "autoUpstream": { "type": "boolean" },
+          "base": { "type": "string" }
+        }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "autoCleanMerged": { "type": "boolean" },
+        "staleAfterDays": { "type": "number", "minimum": 1 },
+        "maxWorktrees": { "type": "number", "minimum": 1 }
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "defaults": { "$ref": "#/properties/defaults" },
+          "repos": { "$ref": "#/properties/repos" },
+          "theme": { "type": "string" },
+          "templates": { "$ref": "#/properties/templates" },
+          "lifecycle": { "$ref": "#/properties/lifecycle" },
+          "sessions": { "$ref": "#/properties/sessions" }
+        }
+      }
+    },
+    "activeProfile": {
+      "type": "string"
+    }
+  },
+  "definitions": {
+    "sharedDeps": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["hardlink", "symlink", "copy"]
+        },
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "invalidateOn": {
+          "type": "array",
+          "items": { "type": "string" }
         }
       }
     }

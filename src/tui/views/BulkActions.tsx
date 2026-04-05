@@ -21,15 +21,14 @@ export function BulkActions(props: { w: number; h: number }) {
   const selectedBranches = () => {
     const wts = git.worktrees() ?? [];
     const selected = app.selectedWorktrees();
-    const branches: { branch: string; path: string; repoPath: string; idx: number }[] = [];
-    for (const idx of selected) {
-      const wt = wts[idx];
+    const branches: { branch: string; path: string; repoPath: string }[] = [];
+    for (const path of selected) {
+      const wt = wts.find((candidate) => candidate.path === path);
       if (wt && !wt.isMain) {
         branches.push({
           branch: wt.branch ?? "(detached)",
           path: wt.path,
           repoPath: wt.repoPath,
-          idx,
         });
       }
     }
@@ -76,6 +75,7 @@ export function BulkActions(props: { w: number; h: number }) {
     invalidateGitCache();
     app.clearSelection();
     app.setSelectedWorktreeIndex(0);
+    app.setSelectedWorktreePath(null);
     git.refetch();
 
     if (errors.length > 0) {
@@ -93,6 +93,7 @@ export function BulkActions(props: { w: number; h: number }) {
 
   useKeyboard(async (event: any) => {
     if (!app.showBulkActions()) return;
+    if (app.showCommandPalette()) return;
     const key = event.name;
     if (state() === "executing") return;
     if (key === "escape") { closeDialog(); return; }

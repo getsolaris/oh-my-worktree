@@ -3,6 +3,7 @@ import { join, resolve, dirname } from "path";
 
 interface FsSyncCompat {
   copyFileSync(src: string, dst: string): void;
+  cpSync(src: string, dst: string, options?: { recursive?: boolean }): void;
   existsSync(path: string): boolean;
   symlinkSync(target: string, path: string): void;
   unlinkSync(path: string): void;
@@ -12,7 +13,7 @@ interface FsSyncCompat {
   mkdirSync(path: string, options?: { recursive?: boolean }): void;
 }
 
-const { copyFileSync, existsSync, symlinkSync, unlinkSync, linkSync, readdirSync, statSync, mkdirSync } = fs as unknown as FsSyncCompat;
+const { copyFileSync, cpSync, existsSync, symlinkSync, unlinkSync, linkSync, readdirSync, statSync, mkdirSync } = fs as unknown as FsSyncCompat;
 
 export interface FilesResult {
   copied: string[];
@@ -48,6 +49,7 @@ export function copyFiles(
       continue;
     }
     try {
+      mkdirSync(dirname(dst), { recursive: true });
       copyFileSync(src, dst);
       result.copied.push(file);
     } catch (e) {
@@ -86,6 +88,7 @@ export function linkFiles(
       continue;
     }
     try {
+      mkdirSync(dirname(dst), { recursive: true });
       symlinkSync(src, dst);
       result.linked.push(file);
     } catch (e) {
@@ -183,6 +186,7 @@ export function applySharedDeps(
 
     try {
       if (strategy === "symlink") {
+        mkdirSync(dirname(dst), { recursive: true });
         symlinkSync(src, dst);
         result.linked.push(depPath);
       } else if (strategy === "hardlink") {
@@ -190,7 +194,8 @@ export function applySharedDeps(
         if (hr.linked > 0) result.linked.push(depPath);
         for (const e of hr.errors) result.warnings.push(e);
       } else {
-        copyFileSync(src, dst);
+        mkdirSync(dirname(dst), { recursive: true });
+        cpSync(src, dst, { recursive: true });
         result.copied.push(depPath);
       }
     } catch (e) {

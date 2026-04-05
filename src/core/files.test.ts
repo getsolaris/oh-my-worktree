@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import * as fs from "fs";
 import { join } from "path";
-import { copyFiles, linkFiles, cleanupFiles } from "./files";
+import { applySharedDeps, copyFiles, linkFiles, cleanupFiles } from "./files";
 import { cleanupTempDirs, createTempDir } from "./test-helpers";
 
 interface TestFs {
@@ -66,6 +66,17 @@ describe("copyFiles", () => {
     expect(result.skipped).toEqual([".env"]);
     expect(result.warnings[0]).toContain("Target already exists");
     expect(readFileSync(join(dstDir, ".env"), "utf-8")).toBe("ORIGINAL");
+  });
+
+  it("creates parent directories for nested target files", () => {
+    setup();
+    mkdirSync(join(srcDir, "config"), { recursive: true });
+    writeFileSync(join(srcDir, "config", ".env.local"), "NESTED=1");
+
+    const result = copyFiles(srcDir, dstDir, ["config/.env.local"]);
+
+    expect(result.copied).toEqual(["config/.env.local"]);
+    expect(readFileSync(join(dstDir, "config", ".env.local"), "utf-8")).toBe("NESTED=1");
   });
 });
 
@@ -134,6 +145,45 @@ describe("linkFiles", () => {
 
     const target = readlinkSync(linkPath);
     expect(target).toBe(subdir);
+  });
+
+  it("creates parent directories for nested symlink targets", () => {
+    setup();
+    const sourcePath = join(srcDir, "packages", "web", "node_modules");
+    mkdirSync(sourcePath, { recursive: true });
+
+    const result = linkFiles(srcDir, dstDir, ["packages/web/node_modules"]);
+
+    expect(result.linked).toEqual(["packages/web/node_modules"]);
+    expect(lstatSync(join(dstDir, "packages", "web", "node_modules")).isSymbolicLink()).toBeTrue();
+  });
+});
+
+describe("applySharedDeps", () => {
+  let srcDir: string;
+  let dstDir: string;
+
+  function setup() {
+    srcDir = createTempDir("omw-shared-deps-");
+    dstDir = createTempDir("omw-shared-deps-");
+  }
+
+  afterEach(() => {
+    cleanupTempDirs();
+  });
+
+  it("copies directory shared deps when strategy is copy", () => {
+    setup();
+    mkdirSync(join(srcDir, "node_modules", "pkg"), { recursive: true });
+    writeFileSync(join(srcDir, "node_modules", "pkg", "index.js"), "export {};\n");
+
+    const result = applySharedDeps(srcDir, dstDir, {
+      strategy: "copy",
+      paths: ["node_modules"],
+    });
+
+    expect(result.copied).toEqual(["node_modules"]);
+    expect(readFileSync(join(dstDir, "node_modules", "pkg", "index.js"), "utf-8")).toContain("export {}");
   });
 });
 

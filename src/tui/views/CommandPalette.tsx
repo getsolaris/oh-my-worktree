@@ -25,6 +25,16 @@ export function CommandPalette() {
   const [query, setQuery] = createSignal("");
   const [selectedIdx, setSelectedIdx] = createSignal(0);
 
+  const selectedWorktree = () => {
+    const wts = git.worktrees() ?? [];
+    const selectedPath = app.selectedWorktreePath();
+    if (selectedPath) {
+      const match = wts.find((wt) => wt.path === selectedPath);
+      if (match) return match;
+    }
+    return wts[app.selectedWorktreeIndex()];
+  };
+
   const detectEditor = (): string | null => {
     const envEditor = process.env.VISUAL || process.env.EDITOR;
     if (envEditor) return envEditor;
@@ -54,6 +64,8 @@ export function CommandPalette() {
       label: "Delete Worktree",
       description: "Remove the selected worktree",
       action: () => {
+        const selected = selectedWorktree();
+        if (!selected || selected.isMain) return;
         app.setShowRemove(true);
         app.setShowCommandPalette(false);
       },
@@ -63,8 +75,7 @@ export function CommandPalette() {
       label: "Open in Editor",
       description: "Open selected worktree in IDE",
       action: () => {
-        const wts = git.worktrees() ?? [];
-        const selected = wts[app.selectedWorktreeIndex()];
+        const selected = selectedWorktree();
         if (!selected) return;
         const editor = detectEditor();
         if (!editor) return;

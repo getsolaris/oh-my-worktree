@@ -132,6 +132,24 @@ Register new commands in `src/cli/index.ts` — add to the `Promise.all` import 
 - Call `invalidateGitCache()` in `afterEach` when testing git operations
 - Structure: `describe("ClassName.method")` → `it("does specific thing")`
 
+#### LLM testing protocol
+
+- Every bug fix should add or update a real regression test file whenever the behavior can be covered in `bun:test`.
+- After changing CLI behavior, run the command for real with `bun run src/index.ts <cmd>` and verify **stdout/stderr + exit code**, not just types.
+- For exhaustive command-by-command manual QA across the full CLI surface, use the project skill at `.claude/skills/omw-cli-smoke-testing/` instead of expanding this file with long procedural steps.
+- When CLI commands, options, or command docs change, update the local smoke-testing skill files (`.claude/skills/omw-cli-smoke-testing/SKILL.md` and `references/command-groups.md`) alongside `src/core/skill-templates.ts` to avoid drift.
+- Run CLI/manual QA in an isolated temp environment when config or repo state matters:
+  - use a temp git repo instead of the project repo
+  - set `HOME` / `XDG_CONFIG_HOME` to temp directories when testing config loading
+  - use a unique tmux session prefix when testing `session` commands
+- After changing TUI behavior, at minimum launch the TUI with `bun run src/index.ts` to catch startup/runtime regressions. If the change affects keyboard/state logic, prefer extracting a small testable helper or adding a regression test for the underlying state transition when full interaction automation is impractical.
+- Default verification order for non-trivial changes:
+  1. targeted `bun test <file>` for touched regression tests
+  2. `bun run typecheck`
+  3. `bun test`
+  4. `bun run build`
+  5. manual command execution for changed CLI flows
+
 ### Git Operations
 
 All git commands go through `GitWorktree.run()` (private static). This:
@@ -173,5 +191,5 @@ When adding or modifying a feature, **all** of the following must be updated bef
 7. **examples/** — add or update `examples/<command>.md`
 8. **AGENTS.md** — update architecture table, module map, key constraints if applicable
 9. **src/core/AGENTS.md** — update module map with new core modules
-10. **Skill references** — update `src/core/skill-templates.ts` when CLI commands change (add/remove/rename commands, change options, update config keys). This regenerates the AI agent skill files (`SKILL.md` + `references/*.md`) installed via `omw init --skill`.
+10. **Skill references** — update `src/core/skill-templates.ts` when CLI commands change (add/remove/rename commands, change options, update config keys). This regenerates the AI agent skill files (`SKILL.md` + `references/*.md`) installed via `omw init --skill`. If the local project smoke-testing skill is affected, update `.claude/skills/omw-cli-smoke-testing/SKILL.md` and `references/command-groups.md` too.
 11. **Typecheck + Tests** — `bun run typecheck` and `bun test` must pass

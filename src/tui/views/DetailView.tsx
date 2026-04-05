@@ -27,6 +27,7 @@ export function DetailView(props: { worktree: Worktree }) {
 
   const [data, setData] = createSignal<DetailData | null>(null);
   const [loading, setLoading] = createSignal(true);
+  const [error, setError] = createSignal("");
 
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -48,43 +49,56 @@ export function DetailView(props: { worktree: Worktree }) {
 
         if (!path) {
           setData(null);
+          setError("");
           setLoading(false);
           return;
         }
 
+        setData(null);
+        setError("");
         setLoading(true);
 
         debounceTimer = setTimeout(async () => {
           if (props.worktree.path !== path) return;
 
-          const [commits, diffStat, aheadBehind] = await Promise.all([
-            fetchRecentCommits(path),
-            props.worktree.branch && !props.worktree.isMain
-              ? GitWorktree.diffBetween(mainBranch(), props.worktree.branch, { stat: true }, path).catch(() => "")
-              : Promise.resolve(""),
-            props.worktree.branch
-              ? GitWorktree.getAheadBehind(props.worktree.branch, path)
-              : Promise.resolve({ ahead: 0, behind: 0 }),
-          ]);
-
-          if (props.worktree.path !== path) return;
-
-          let focus: string[] | null = null;
           try {
-            focus = readFocus(path);
-          } catch {}
+            const [commits, diffStat, aheadBehind] = await Promise.all([
+              fetchRecentCommits(path),
+              props.worktree.branch && !props.worktree.isMain
+                ? GitWorktree.diffBetween(mainBranch(), props.worktree.branch, { stat: true }, path).catch(() => "")
+                : Promise.resolve(""),
+              props.worktree.branch
+                ? GitWorktree.getAheadBehind(props.worktree.branch, path)
+                : Promise.resolve({ ahead: 0, behind: 0 }),
+            ]);
 
-          let session: DetailData["session"] = null;
-          const meta = readSessionMeta(path);
-          if (meta) {
-            const active = await sessionExists(meta.name).catch(() => false);
-            session = { meta, active };
+            if (props.worktree.path !== path) return;
+
+            let focus: string[] | null = null;
+            try {
+              focus = readFocus(path);
+            } catch {}
+
+            let session: DetailData["session"] = null;
+            const meta = readSessionMeta(path);
+            if (meta) {
+              const active = await sessionExists(meta.name).catch(() => false);
+              session = { meta, active };
+            }
+
+            if (props.worktree.path !== path) return;
+
+            setData({ commits, diffStat, aheadBehind, focus, session });
+            setError("");
+          } catch (err) {
+            if (props.worktree.path !== path) return;
+            setData(null);
+            setError((err as Error).message);
+          } finally {
+            if (props.worktree.path === path) {
+              setLoading(false);
+            }
           }
-
-          if (props.worktree.path !== path) return;
-
-          setData({ commits, diffStat, aheadBehind, focus, session });
-          setLoading(false);
         }, DEBOUNCE_MS);
       },
     ),
@@ -186,7 +200,16 @@ export function DetailView(props: { worktree: Worktree }) {
           </box>
         </Show>
 
-        <Show when={!loading() && !!data()}>
+        <Show when={!loading() && !!error()}>
+          <box height={1} />
+          <box height={1}>
+            <text x={0} y={0} fg={theme.text.error}>
+              {`Failed to load details: ${error()}`}
+            </text>
+          </box>
+        </Show>
+
+        <Show when={!loading() && !error() && !!data()}>
           <box height={1} />
           <box height={1}>
             <text x={0} y={0} fg={theme.text.accent} bold>

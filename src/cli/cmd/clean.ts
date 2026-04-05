@@ -76,8 +76,10 @@ const cmd: CommandModule = {
         }
       }
 
-      await GitWorktree.prune(mainRepoPath);
-      if (!dryRun) console.log("Pruned stale worktree entries.");
+      if (!dryRun) {
+        await GitWorktree.prune(mainRepoPath);
+        console.log("Pruned stale worktree entries.");
+      }
 
       if (argv.stale) {
         const config = loadConfig();
