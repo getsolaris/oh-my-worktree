@@ -72,6 +72,21 @@ bun install -g oh-my-worktree
 npm install -g oh-my-worktree
 ```
 
+## Local Development
+
+For local contributor testing, run the repo directly with Bun:
+
+```bash
+bun install
+bun run src/index.ts
+bun run src/index.ts <cmd>
+bun run typecheck
+bun test
+bun run build
+```
+
+Prefer targeted tests first when you change covered code, then run the full checks before opening a PR. If you change CLI or TUI behavior, manually run the affected flows locally as well.
+
 ## Quick Start
 
 ```bash
