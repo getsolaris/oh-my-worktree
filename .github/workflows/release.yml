@@ -26,6 +26,12 @@ jobs:
         with:
           files: dist/omw.js
           generate_release_notes: true
+      - name: Publish to npm
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+          npm publish --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Update Homebrew Formula
         env:
           TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
