@@ -1,7 +1,7 @@
-import { Show, For, createSignal, createEffect, on, onCleanup } from "solid-js";
+import { Show, For, createSignal, createEffect, on, onCleanup, createMemo } from "solid-js";
 import { useTerminalDimensions } from "@opentui/solid";
 import { useGit } from "../context/GitContext.tsx";
-import { theme } from "../themes.ts";
+import { theme, getSyntaxStyle, currentThemeName } from "../themes.ts";
 import { readFocus } from "../../core/focus.ts";
 import { readSessionMeta, sessionExists, type SessionInfo } from "../../core/session.ts";
 import { GitWorktree } from "../../core/git.ts";
@@ -30,6 +30,7 @@ export function DetailView(props: { worktree: Worktree }) {
   const [data, setData] = createSignal<DetailData | null>(null);
   const [loading, setLoading] = createSignal(true);
   const [error, setError] = createSignal("");
+  const syntaxStyle = createMemo(() => getSyntaxStyle(currentThemeName()));
 
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -138,12 +139,6 @@ export function DetailView(props: { worktree: Worktree }) {
     return d.aheadBehind.ahead || d.aheadBehind.behind
       ? theme.text.warning
       : theme.text.success;
-  };
-
-  const diffLines = () => {
-    const d = data();
-    if (!d || !d.diffStat) return [];
-    return d.diffStat.split("\n").filter(Boolean);
   };
 
   const separator = () => "\u2500".repeat(Math.max(w() - 7, 10));
@@ -287,14 +282,8 @@ export function DetailView(props: { worktree: Worktree }) {
             <box height={1}>
               <text x={0} y={0} fg={theme.border.subtle}>{separator()}</text>
             </box>
-            <Show when={diffLines().length > 0}>
-              <For each={diffLines()}>
-                {(line) => (
-                  <box height={1}>
-                    <text x={0} y={0} fg={theme.text.primary}>{line}</text>
-                  </box>
-                )}
-              </For>
+            <Show when={data()!.diffStat.length > 0}>
+              <code language="diff" code={data()!.diffStat} />
             </Show>
             <box height={1} />
             <Show
