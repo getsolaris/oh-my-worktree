@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 /// <reference types="bun-types" />
 import { readFileSync, mkdirSync } from "node:fs";
+import solidPlugin from "@opentui/solid/bun-plugin";
 
 const pkg = JSON.parse(readFileSync("package.json", "utf-8")) as { version: string };
 
@@ -14,6 +15,7 @@ const result = await Bun.build({
   target: "bun",
   minify: true,
   naming: "omw.js",
+  plugins: [solidPlugin],
   external: [
     "@opentui/core",
     "@opentui/solid",
