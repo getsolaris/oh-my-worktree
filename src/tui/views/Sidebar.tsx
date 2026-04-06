@@ -68,6 +68,7 @@ export function Sidebar() {
     if (app.showCommandPalette()) return;
     if (app.showRemove()) return;
     if (app.showBulkActions()) return;
+    if (app.inputFocused()) return;
     const key = event.name;
     const wts = worktrees();
     if (key === "j" || key === "down") {

@@ -23,7 +23,39 @@ export interface Theme {
     normalFg: string;
     descFg: string;
   };
+  syntax?: {
+    keyword: string;
+    string: string;
+    comment: string;
+    number: string;
+    function: string;
+    operator: string;
+    type: string;
+    variable: string;
+  };
 }
+
+export const SYNTAX_DARK = {
+  keyword: "#FF7B72",
+  string: "#A5D6FF",
+  comment: "#8B949E",
+  number: "#79C0FF",
+  function: "#D2A8FF",
+  operator: "#FF7B72",
+  type: "#FFA657",
+  variable: "#E6EDF3",
+};
+
+export const SYNTAX_LIGHT = {
+  keyword: "#D73A49",
+  string: "#032F62",
+  comment: "#6A737D",
+  number: "#005CC5",
+  function: "#6F42C1",
+  operator: "#D73A49",
+  type: "#E36209",
+  variable: "#24292E",
+};
 
 const THEMES: Record<ThemeName, Theme> = {
   opencode: {
@@ -251,6 +283,10 @@ export const THEME_LABELS: Record<ThemeName, string> = {
 };
 
 export const [currentThemeName, setCurrentThemeName] = createSignal<ThemeName>("opencode");
+
+export function getSyntaxStyle(themeName: ThemeName) {
+  return themeName === "github-light" ? SYNTAX_LIGHT : SYNTAX_DARK;
+}
 
 // Reactive proxy — accessing theme.bg.base inside SolidJS components will track `currentThemeName`
 export const theme: Theme = new Proxy({} as Theme, {

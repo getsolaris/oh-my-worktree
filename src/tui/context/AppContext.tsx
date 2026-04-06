@@ -15,6 +15,8 @@ interface AppState {
   setShowCommandPalette: (v: boolean) => void;
   showDetailView: () => boolean;
   setShowDetailView: (v: boolean) => void;
+  inputFocused: () => boolean;
+  setInputFocused: (v: boolean) => void;
   repoPath: () => string;
   repoPaths: () => string[];
   selectedWorktrees: () => Set<string>;
@@ -39,6 +41,7 @@ export function AppProvider(props: {
   const [showRemove, setShowRemove] = createSignal(false);
   const [showCommandPalette, setShowCommandPalette] = createSignal(false);
   const [showDetailView, setShowDetailView] = createSignal(false);
+  const [inputFocused, setInputFocused] = createSignal(false);
   const [selectedWorktrees, setSelectedWorktrees] = createSignal<Set<string>>(new Set());
   const [showBulkActions, setShowBulkActions] = createSignal(false);
 
@@ -91,6 +94,8 @@ export function AppProvider(props: {
         setShowCommandPalette,
         showDetailView,
         setShowDetailView,
+        inputFocused,
+        setInputFocused,
         repoPath: () => props.repoPath,
         repoPaths: () => props.repoPaths,
         selectedWorktrees,

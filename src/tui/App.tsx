@@ -31,11 +31,16 @@ declare module "solid-js" {
       u: any;
       br: any;
       tab_select: any;
-      select: any;
-      scrollbox: any;
-      input: any;
-      toaster: any;
-    }
+        select: any;
+        scrollbox: any;
+        input: any;
+        diff: any;
+        code: any;
+        line_number: any;
+        ascii_font: any;
+        textarea: any;
+        toaster: any;
+      }
   }
 }
 
@@ -105,12 +110,7 @@ function AppShell(props: { repoPath: string }) {
   });
 
   useKeyboard((event: any) => {
-    if (app.showCommandPalette()) return;
     const key = event.name;
-    if (event.ctrl && key === "p") {
-      app.setShowCommandPalette(true);
-      return;
-    }
     if (key === "escape") {
       if (app.showBulkActions()) { app.setShowBulkActions(false); return; }
       if (app.showDetailView()) { app.setShowDetailView(false); return; }
@@ -118,6 +118,12 @@ function AppShell(props: { repoPath: string }) {
       if (showHelp()) { setShowHelp(false); return; }
       if (app.activeTab() !== "list") { app.setActiveTab("list"); return; }
     }
+    if (event.ctrl && key === "p") {
+      app.setShowCommandPalette(true);
+      return;
+    }
+    if (app.inputFocused()) return;
+    if (app.showCommandPalette()) return;
     if (app.showBulkActions()) return;
     if (app.showRemove()) return;
     if (app.activeTab() === "add") return;
