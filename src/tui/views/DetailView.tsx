@@ -11,6 +11,7 @@ import { Spinner } from "./Spinner.tsx";
 interface DetailData {
   commits: string[];
   diffStat: string;
+  fullDiff: string;
   aheadBehind: { ahead: number; behind: number };
   focus: string[] | null;
   session: { meta: SessionInfo; active: boolean } | null;
@@ -63,11 +64,14 @@ export function DetailView(props: { worktree: Worktree }) {
           if (props.worktree.path !== path) return;
 
           try {
-            const [commits, diffStat, aheadBehind] = await Promise.all([
+            const [commits, [diffStat, fullDiff], aheadBehind] = await Promise.all([
               fetchRecentCommits(path),
               props.worktree.branch && !props.worktree.isMain
-                ? GitWorktree.diffBetween(mainBranch(), props.worktree.branch, { stat: true }, path).catch(() => "")
-                : Promise.resolve(""),
+                ? Promise.all([
+                    GitWorktree.diffBetween(mainBranch(), props.worktree.branch, { stat: true }, path).catch(() => ""),
+                    GitWorktree.diffBetween(mainBranch(), props.worktree.branch, undefined, path).catch(() => ""),
+                  ])
+                : Promise.resolve(["", ""]),
               props.worktree.branch
                 ? GitWorktree.getAheadBehind(props.worktree.branch, path)
                 : Promise.resolve({ ahead: 0, behind: 0 }),
@@ -89,7 +93,7 @@ export function DetailView(props: { worktree: Worktree }) {
 
             if (props.worktree.path !== path) return;
 
-            setData({ commits, diffStat, aheadBehind, focus, session });
+            setData({ commits, diffStat, fullDiff, aheadBehind, focus, session });
             setError("");
           } catch (err) {
             if (props.worktree.path !== path) return;
@@ -273,7 +277,7 @@ export function DetailView(props: { worktree: Worktree }) {
             </For>
           </Show>
 
-          <Show when={!props.worktree.isMain && diffLines().length > 0}>
+          <Show when={!props.worktree.isMain}>
             <box height={1} />
             <box height={1}>
               <text x={0} y={0} fg={theme.text.accent} bold>
@@ -283,13 +287,28 @@ export function DetailView(props: { worktree: Worktree }) {
             <box height={1}>
               <text x={0} y={0} fg={theme.border.subtle}>{separator()}</text>
             </box>
-            <For each={diffLines()}>
-              {(line) => (
+            <Show when={diffLines().length > 0}>
+              <For each={diffLines()}>
+                {(line) => (
+                  <box height={1}>
+                    <text x={0} y={0} fg={theme.text.primary}>{line}</text>
+                  </box>
+                )}
+              </For>
+            </Show>
+            <box height={1} />
+            <Show
+              when={data()!.fullDiff.length > 0}
+              fallback={
                 <box height={1}>
-                  <text x={0} y={0} fg={theme.text.primary}>{line}</text>
+                  <text x={0} y={0} fg={theme.text.secondary}>No changes</text>
                 </box>
-              )}
-            </For>
+              }
+            >
+              <scrollbox height={15} width={w() - 3}>
+                <diff diff={data()!.fullDiff} view="unified" />
+              </scrollbox>
+            </Show>
           </Show>
 
           <Show when={data()!.focus && data()!.focus!.length > 0}>
