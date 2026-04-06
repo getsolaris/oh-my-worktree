@@ -1,4 +1,4 @@
-import { createSignal, For, createMemo, Show } from "solid-js";
+import { createSignal, For, createMemo, onCleanup, onMount, Show } from "solid-js";
 import { useApp } from "../context/AppContext.tsx";
 import { useGit } from "../context/GitContext.tsx";
 import { useKeyboard, useTerminalDimensions } from "@opentui/solid";
@@ -7,7 +7,6 @@ import {
   setCurrentThemeName,
   THEME_NAMES,
   THEME_LABELS,
-  type ThemeName,
 } from "../themes.ts";
 import { PopupShell } from "./PopupShell.tsx";
 import { loadConfig, getConfigPath, writeAtomically } from "../../core/config.ts";
@@ -25,6 +24,14 @@ export function CommandPalette() {
   const dims = useTerminalDimensions();
   const [query, setQuery] = createSignal("");
   const [selectedIdx, setSelectedIdx] = createSignal(0);
+
+  onMount(() => {
+    app.setInputFocused(true);
+  });
+
+  onCleanup(() => {
+    app.setInputFocused(false);
+  });
 
   const selectedWorktree = () => {
     const wts = git.worktrees() ?? [];
@@ -147,6 +154,7 @@ export function CommandPalette() {
     const key = event.name;
 
     if (key === "escape") {
+      app.setInputFocused(false);
       app.setShowCommandPalette(false);
       setQuery("");
       setSelectedIdx(0);
@@ -167,20 +175,17 @@ export function CommandPalette() {
       setSelectedIdx((i) => Math.max(i - 1, 0));
       return;
     }
-    if (key === "backspace") {
-      setQuery((s) => s.slice(0, -1));
-      setSelectedIdx(0);
-      return;
-    }
-    if (event.sequence && event.sequence.length === 1 && event.sequence.charCodeAt(0) >= 32) {
-      setQuery((s) => s + event.sequence);
-      setSelectedIdx(0);
-    }
   });
+
+  const handleQueryInput = (value: string) => {
+    setQuery(value);
+    setSelectedIdx(0);
+  };
 
   const dialogW = () => Math.max(50, Math.min(80, dims().width - 4));
   const dialogH = () => Math.max(10, Math.min(filtered().length + 8, dims().height - 4));
   const innerW = () => dialogW() - 4;
+  const inputW = () => Math.max(innerW() - 2, 1);
   const listH = () => dialogH() - 8;
 
   return (
@@ -210,10 +215,21 @@ export function CommandPalette() {
         height={1}
         width={innerW()}
         backgroundColor={theme.bg.elevated}
+        flexDirection="row"
       >
-        <text x={1} y={0} fg={theme.text.accent}>{">"}</text>
-        <text x={3} y={0} fg={theme.text.primary}>{query()}</text>
-        <text x={3 + query().length} y={0} fg={theme.text.accent}>{"\u2588"}</text>
+        <text fg={theme.text.accent}>{"> "}</text>
+        <input
+          value={query()}
+          onInput={handleQueryInput}
+          placeholder="Search commands..."
+          focused={true}
+          width={inputW()}
+          backgroundColor={theme.bg.elevated}
+          textColor={theme.text.primary}
+          placeholderColor={theme.text.secondary}
+          cursorColor={theme.text.accent}
+          focusedBackgroundColor={theme.bg.elevated}
+        />
       </box>
 
       <box height={1} width={innerW()}>
