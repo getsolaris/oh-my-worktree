@@ -1,4 +1,4 @@
-import { createSignal, createEffect, on, onCleanup, For, Show } from "solid-js";
+import { createSignal, createEffect, on, onCleanup, onMount, For, Show } from "solid-js";
 import { useApp } from "../context/AppContext.tsx";
 import { useGit } from "../context/GitContext.tsx";
 import { GitWorktree } from "../../core/git.ts";
@@ -52,6 +52,13 @@ export function WorktreeCreate() {
       setBranches([]);
     }
   }));
+
+  onMount(() => {
+    queueMicrotask(() => {
+      setBranchInput("");
+      setFocusInput("");
+    });
+  });
 
   createEffect(on(branchInput, () => {
     setBranchPickerIdx(-1);
