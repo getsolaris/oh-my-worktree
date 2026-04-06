@@ -1,6 +1,9 @@
 import { Show, type JSX, type ParentProps } from "solid-js";
-import { useTerminalDimensions } from "@opentui/solid";
+import { Portal as RawPortal, useRenderer, useTerminalDimensions } from "@opentui/solid";
 import { theme } from "../themes.ts";
+
+// Type bridge: Portal returns BaseRenderable (valid for OpenTUI renderer) but TS JSX expects Node
+const Portal = RawPortal as unknown as (props: { mount: unknown; children?: JSX.Element }) => JSX.Element;
 
 interface PopupShellProps {
   width: number;
@@ -15,6 +18,7 @@ interface PopupShellProps {
 }
 
 export function PopupShell(props: ParentProps<PopupShellProps>) {
+  const renderer = useRenderer();
   const dims = useTerminalDimensions();
   const dialogX = () => Math.max(0, Math.floor((dims().width - props.width) / 2));
   const dialogY = () => Math.max(0, Math.floor((dims().height - props.height) / 2));
@@ -36,6 +40,7 @@ export function PopupShell(props: ParentProps<PopupShellProps>) {
       title={props.title}
       titleAlignment="left"
       position="absolute"
+      zIndex={11}
     >
       {props.children}
       <Show when={props.footer}>{props.footer}</Show>
@@ -43,20 +48,23 @@ export function PopupShell(props: ParentProps<PopupShellProps>) {
   );
 
   return (
-    <Show
-      when={props.backdrop}
-      fallback={shell()}
-    >
-      <box
-        x={0}
-        y={0}
-        width={dims().width}
-        height={dims().height}
-        backgroundColor={props.backdropColor ?? theme.bg.overlay}
-        position="absolute"
+    <Portal mount={renderer.root}>
+      <Show
+        when={props.backdrop}
+        fallback={shell()}
       >
-        {shell()}
-      </box>
-    </Show>
+        <box
+          x={0}
+          y={0}
+          width={dims().width}
+          height={dims().height}
+          backgroundColor={props.backdropColor ?? theme.bg.overlay}
+          position="absolute"
+          zIndex={10}
+        >
+          {shell()}
+        </box>
+      </Show>
+    </Portal>
   );
 }
