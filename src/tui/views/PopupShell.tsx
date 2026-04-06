@@ -1,5 +1,5 @@
-import { Show, type JSX, type ParentProps } from "solid-js";
-import { Portal as RawPortal, useRenderer, useTerminalDimensions } from "@opentui/solid";
+import { Show, type JSX, type ParentProps, createSignal, onMount } from "solid-js";
+import { Portal as RawPortal, useRenderer, useTerminalDimensions, useTimeline } from "@opentui/solid";
 import { theme } from "../themes.ts";
 
 // Type bridge: Portal returns BaseRenderable (valid for OpenTUI renderer) but TS JSX expects Node
@@ -20,15 +20,38 @@ interface PopupShellProps {
 export function PopupShell(props: ParentProps<PopupShellProps>) {
   const renderer = useRenderer();
   const dims = useTerminalDimensions();
+  const [animatedHeight, setAnimatedHeight] = createSignal(0);
+  const [animating, setAnimating] = createSignal(true);
+
+  const timeline = useTimeline({ duration: 200 });
+
   const dialogX = () => Math.max(0, Math.floor((dims().width - props.width) / 2));
   const dialogY = () => Math.max(0, Math.floor((dims().height - props.height) / 2));
+
+  onMount(() => {
+    timeline.add(
+      { h: 0 },
+      {
+        h: props.height,
+        duration: 200,
+        ease: "outQuad",
+        onUpdate: (anim) => {
+          setAnimatedHeight(Math.round(anim.targets[0].h));
+        },
+        onComplete: () => {
+          setAnimatedHeight(props.height);
+          setAnimating(false);
+        },
+      },
+    );
+  });
 
   const shell = () => (
     <box
       x={dialogX()}
       y={dialogY()}
       width={props.width}
-      height={props.height}
+      height={animatedHeight()}
       border={true}
       borderStyle="rounded"
       borderColor={props.borderColor ?? theme.border.active}
@@ -42,8 +65,10 @@ export function PopupShell(props: ParentProps<PopupShellProps>) {
       position="absolute"
       zIndex={11}
     >
-      {props.children}
-      <Show when={props.footer}>{props.footer}</Show>
+      <Show when={!animating()}>
+        {props.children}
+        <Show when={props.footer}>{props.footer}</Show>
+      </Show>
     </box>
   );
 
