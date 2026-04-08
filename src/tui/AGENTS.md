@@ -16,7 +16,7 @@ App.tsx (launchTUI → render)
     │   ├── WorktreeCreate (views/WorktreeCreate.tsx) — branch + focus input form
     │   ├── WorktreeRemove (views/WorktreeRemove.tsx) — confirmation dialog
     │   ├── DoctorView (views/DoctorView.tsx) — health checks + auto-fix
-    │   ├── ConfigView (views/ConfigView.tsx) — config display
+    │   ├── ConfigView (views/ConfigView.tsx) — full config display + inline editing (string, strArray as JSON, boolean, theme, enum) with Tab-cycle through field-specific presets, via setNestedValue + writeAtomically
     │   ├── CommandPalette (views/CommandPalette.tsx) — Ctrl+P fuzzy search
     │   └── Spinner (views/Spinner.tsx) — animated braille dots spinner
     └── Footer bar (keyboard hints)

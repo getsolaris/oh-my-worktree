@@ -217,6 +217,43 @@ Press `h` to open the Doctor tab. Shows health check results:
 
 Press `r` to recheck, `Esc` to go back.
 
+### Config View
+
+Open with `Ctrl+P` → `Open Config`. The Config tab renders the full contents of `~/.config/oh-my-worktree/config.json`, including:
+
+- Top-level: `version`, `theme`, `activeProfile`
+- `defaults` (including `postRemove`, `autoUpstream`, `sharedDeps`)
+- All per-repo overrides
+- The full `monorepo` tree — `autoDetect`, `extraPatterns`, and every `hooks[]` entry with its `glob` / `copyFiles` / `linkFiles` / `postCreate` / `postRemove`
+- `templates`, `lifecycle`, `sessions`, `profiles`
+
+Most scalar and string-array fields are editable inline. The counter in the header shows the current position (`1/20`).
+
+| Key | Action |
+| --- | --- |
+| `j` / `k` | Navigate editable fields |
+| `g` / `G` | Jump to first / last field |
+| `Enter` | Edit the selected field |
+| `Tab` | Cycle through preset values (in edit mode) |
+| `Space` / `←→` | Toggle a boolean / cycle a theme (in edit mode) |
+| `Enter` | Commit the edit (saves to disk + reloads) |
+| `Esc` | Cancel the edit |
+| `e` | Open the config file in `$EDITOR` |
+| `r` | Reload the file from disk |
+| `i` | Initialize the config file if missing |
+
+Inline editing supports five kinds of fields:
+
+- **Strings** — plain text input (e.g. `worktreeDir`, hook `glob`, `sessions.prefix`). Press `Tab` to cycle through common presets.
+- **String arrays** — JSON input like `[".env", ".env.local"]`. Empty input is treated as `[]`. Press `Tab` to cycle through presets including `[]` as the first option.
+- **Booleans** — toggle with `Space`, `Tab`, or `←→`, commit with `Enter`.
+- **Themes** — cycle with `Tab` or `←→`, commit with `Enter`. The new theme is applied live.
+- **Enums** — fields with a fixed set of valid values (e.g. `sharedDeps.strategy` = `hardlink` / `symlink` / `copy`). Cycle with `Tab` or `←→`, commit with `Enter`.
+
+The footer shows the current preset position when applicable, e.g. `Tab:preset (2/4)`. The cycle starts at the position matching the current value, so the first `Tab` always advances to a new value.
+
+Every commit runs `validateConfig` before writing. Invalid input surfaces as an inline error and the edit stays open so you can fix it. For more complex fields (`sessions.layouts`, `templates`, `profiles`), press `e` to open `$EDITOR`.
+
 ## CLI Commands
 
 | Command                  | Description                          |

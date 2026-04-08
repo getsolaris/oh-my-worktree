@@ -116,6 +116,7 @@ function AppShell(props: { repoPath: string }) {
       if (app.showDetailView()) { app.setShowDetailView(false); return; }
       if (app.showRemove()) { app.setShowRemove(false); return; }
       if (showHelp()) { setShowHelp(false); return; }
+      if (app.inputFocused()) return;
       if (app.activeTab() !== "list") { app.setActiveTab("list"); return; }
     }
     if (event.ctrl && key === "p") {

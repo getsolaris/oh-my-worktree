@@ -6,6 +6,7 @@ import {
   getRepoConfig,
   initConfig,
   loadConfig,
+  setNestedValue,
   type OmwConfig,
   validateConfig,
 } from "./config";
@@ -455,5 +456,117 @@ describe("getRepoConfig - monorepo", () => {
     const config: OmwConfig = { version: 1, repos: [{ path: "/tmp/no-mono" }] };
     const resolved = getRepoConfig(config, "/tmp/no-mono");
     expect(resolved.monorepo).toBeUndefined();
+  });
+});
+
+describe("setNestedValue", () => {
+  it("sets a top-level scalar on an empty object", () => {
+    const obj: Record<string, unknown> = {};
+    setNestedValue(obj, ["theme"], "dracula");
+    expect(obj).toEqual({ theme: "dracula" });
+  });
+
+  it("overwrites an existing top-level scalar", () => {
+    const obj: Record<string, unknown> = { theme: "opencode" };
+    setNestedValue(obj, ["theme"], "nord");
+    expect(obj).toEqual({ theme: "nord" });
+  });
+
+  it("creates intermediate object when the next key is a string", () => {
+    const obj: Record<string, unknown> = { version: 1 };
+    setNestedValue(obj, ["defaults", "worktreeDir"], "~/wt/{repo}-{branch}");
+    expect(obj).toEqual({ version: 1, defaults: { worktreeDir: "~/wt/{repo}-{branch}" } });
+  });
+
+  it("creates intermediate array when the next key is a number", () => {
+    const obj: Record<string, unknown> = { version: 1 };
+    setNestedValue(obj, ["repos", 0, "path"], "/tmp/a");
+    expect(obj).toEqual({ version: 1, repos: [{ path: "/tmp/a" }] });
+  });
+
+  it("sets a deeply nested monorepo hook field without disturbing siblings", () => {
+    const obj: Record<string, unknown> = {
+      version: 1,
+      repos: [
+        {
+          path: "/tmp/a",
+          monorepo: {
+            autoDetect: true,
+            hooks: [
+              { glob: "apps/*", copyFiles: [".env"], postCreate: ["pnpm install"] },
+            ],
+          },
+        },
+      ],
+    };
+    setNestedValue(obj, ["repos", 0, "monorepo", "hooks", 0, "copyFiles"], [".env", ".env.local"]);
+    expect(obj).toEqual({
+      version: 1,
+      repos: [
+        {
+          path: "/tmp/a",
+          monorepo: {
+            autoDetect: true,
+            hooks: [
+              { glob: "apps/*", copyFiles: [".env", ".env.local"], postCreate: ["pnpm install"] },
+            ],
+          },
+        },
+      ],
+    });
+  });
+
+  it("updates a value inside an array element without touching other elements", () => {
+    const obj: Record<string, unknown> = {
+      version: 1,
+      repos: [{ path: "/tmp/a" }, { path: "/tmp/b" }],
+    };
+    setNestedValue(obj, ["repos", 1, "worktreeDir"], "~/wt/b");
+    expect(obj).toEqual({
+      version: 1,
+      repos: [{ path: "/tmp/a" }, { path: "/tmp/b", worktreeDir: "~/wt/b" }],
+    });
+  });
+
+  it("deletes a field when given undefined", () => {
+    const obj: Record<string, unknown> = {
+      version: 1,
+      defaults: { worktreeDir: "~/wt", copyFiles: [".env"] },
+    };
+    setNestedValue(obj, ["defaults", "copyFiles"], undefined);
+    expect(obj).toEqual({ version: 1, defaults: { worktreeDir: "~/wt" } });
+  });
+
+  it("removes an array element when given undefined and a numeric tail key", () => {
+    const obj: Record<string, unknown> = {
+      version: 1,
+      repos: [{ path: "/tmp/a" }, { path: "/tmp/b" }, { path: "/tmp/c" }],
+    };
+    setNestedValue(obj, ["repos", 1], undefined);
+    expect(obj).toEqual({
+      version: 1,
+      repos: [{ path: "/tmp/a" }, { path: "/tmp/c" }],
+    });
+  });
+
+  it("produces a structure that passes validateConfig after edits", () => {
+    const obj: Record<string, unknown> = { version: 1 };
+    setNestedValue(obj, ["theme"], "github-dark");
+    setNestedValue(obj, ["defaults", "worktreeDir"], "~/wt/{repo}-{branch}");
+    setNestedValue(obj, ["defaults", "postRemove"], ["echo removed"]);
+    setNestedValue(obj, ["repos", 0, "path"], "/tmp/work/msa");
+    setNestedValue(obj, ["repos", 0, "monorepo", "autoDetect"], true);
+    setNestedValue(obj, ["repos", 0, "monorepo", "extraPatterns"], ["apps/*/*"]);
+    setNestedValue(obj, ["repos", 0, "monorepo", "hooks", 0, "glob"], "apps/*/*");
+    setNestedValue(obj, ["repos", 0, "monorepo", "hooks", 0, "copyFiles"], [".env"]);
+    setNestedValue(obj, ["repos", 0, "monorepo", "hooks", 0, "postCreate"], ["cd {packagePath} && pnpm install"]);
+
+    expect(validateConfig(obj)).toEqual([]);
+  });
+
+  it("is a no-op for an empty path", () => {
+    const obj: Record<string, unknown> = { version: 1 };
+    setNestedValue(obj, [], "ignored");
+    expect(obj).toEqual({ version: 1 });
   });
 });

@@ -702,6 +702,37 @@ export function resolveSessionLayout(config: OmwConfig, layoutName?: string): Se
   return sessions.layouts[name];
 }
 
+export function setNestedValue(
+  obj: Record<string, unknown>,
+  path: ReadonlyArray<string | number>,
+  value: unknown,
+): void {
+  if (path.length === 0) return;
+
+  let curr: Record<string | number, unknown> = obj as Record<string | number, unknown>;
+
+  for (let i = 0; i < path.length - 1; i++) {
+    const key = path[i]!;
+    const nextKey = path[i + 1]!;
+    const existing = curr[key];
+    if (existing === undefined || existing === null) {
+      curr[key] = typeof nextKey === "number" ? [] : {};
+    }
+    curr = curr[key] as Record<string | number, unknown>;
+  }
+
+  const lastKey = path[path.length - 1]!;
+  if (value === undefined) {
+    if (Array.isArray(curr) && typeof lastKey === "number") {
+      (curr as unknown as unknown[]).splice(lastKey, 1);
+    } else {
+      delete curr[lastKey];
+    }
+    return;
+  }
+  curr[lastKey] = value;
+}
+
 export function writeAtomically(filePath: string, content: string): void {
   const tmpPath = `${filePath}.tmp.${Date.now()}`;
 

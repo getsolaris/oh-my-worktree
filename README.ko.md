@@ -200,6 +200,43 @@ omw init --skill claude-code
 
 `r`로 재확인, `Esc`로 돌아가기.
 
+### Config 뷰
+
+`Ctrl+P` → `Open Config`로 엽니다. Config 탭은 `~/.config/oh-my-worktree/config.json`의 전체 내용을 렌더링합니다:
+
+- 최상위: `version`, `theme`, `activeProfile`
+- `defaults` (`postRemove`, `autoUpstream`, `sharedDeps` 포함)
+- 모든 레포별 오버라이드
+- 전체 `monorepo` 트리 — `autoDetect`, `extraPatterns`, 각 `hooks[]` 항목과 `glob` / `copyFiles` / `linkFiles` / `postCreate` / `postRemove`
+- `templates`, `lifecycle`, `sessions`, `profiles`
+
+대부분의 스칼라/문자열 배열 필드는 인라인으로 수정 가능합니다. 헤더 카운터(`1/20`)는 현재 선택된 필드 위치를 나타냅니다.
+
+| 키 | 동작 |
+| --- | --- |
+| `j` / `k` | 수정 가능한 필드 이동 |
+| `g` / `G` | 첫 번째 / 마지막 필드로 이동 |
+| `Enter` | 선택된 필드 편집 시작 |
+| `Tab` | 프리셋 값 순환 (편집 모드) |
+| `Space` / `←→` | 불리언 토글 / 테마 변경 (편집 모드) |
+| `Enter` | 편집 커밋 (디스크에 저장 후 재로드) |
+| `Esc` | 편집 취소 |
+| `e` | `$EDITOR`로 config 파일 열기 |
+| `r` | 디스크에서 파일 재로드 |
+| `i` | 설정 파일 초기화 |
+
+인라인 편집은 다섯 종류의 필드를 지원합니다:
+
+- **문자열** — 일반 텍스트 입력 (예: `worktreeDir`, 훅 `glob`, `sessions.prefix`). `Tab`으로 자주 쓰이는 프리셋 순환
+- **문자열 배열** — `[".env", ".env.local"]` 같은 JSON 입력. 빈 입력은 `[]`로 처리. `Tab`으로 프리셋 순환 (`[]` 빈 배열도 첫 프리셋으로 포함)
+- **불리언** — `Space`, `Tab`, `←→`로 토글, `Enter`로 커밋
+- **테마** — `Tab` 또는 `←→`로 순환, `Enter`로 커밋. 새 테마는 즉시 적용됨
+- **Enum** — 유효한 값이 고정된 필드 (예: `sharedDeps.strategy` = `hardlink` / `symlink` / `copy`). `Tab` 또는 `←→`로 순환, `Enter`로 커밋
+
+푸터에 현재 프리셋 위치가 표시됩니다 (예: `Tab:preset (2/4)`). 순환은 현재 값과 일치하는 위치에서 시작하므로, 첫 `Tab` 입력은 항상 다른 값으로 이동합니다.
+
+커밋 시 `validateConfig`로 유효성 검증 후 파일에 기록합니다. 유효하지 않은 입력은 인라인 에러로 표시되며 수정할 수 있도록 편집 모드가 유지됩니다. 복잡한 필드(`sessions.layouts`, `templates`, `profiles`)는 `e`로 `$EDITOR`를 열어 편집하세요.
+
 ## CLI 커맨드
 
 | 커맨드 | 설명 |
