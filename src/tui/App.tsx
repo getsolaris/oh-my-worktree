@@ -13,9 +13,13 @@ import { DoctorView } from "./views/DoctorView.tsx";
 import { Sidebar } from "./views/Sidebar.tsx";
 import { theme, setCurrentThemeName, THEME_NAMES, type ThemeName } from "./themes.ts";
 import { CommandPalette } from "./views/CommandPalette.tsx";
+import { FocusPicker } from "./views/FocusPicker.tsx";
 import { ToastProvider } from "./context/ToastContext.tsx";
 import { Toast } from "./views/Toast.tsx";
+import { useToast } from "./context/ToastContext.tsx";
 import { loadConfig, getConfiguredRepoPaths } from "../core/config.ts";
+import { resolveFocusOpenTarget } from "../core/focus.ts";
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 declare module "solid-js" {
@@ -61,6 +65,7 @@ const SIDEBAR_W = 28;
 function AppShell(props: { repoPath: string }) {
   const app = useApp();
   const git = useGit();
+  const toast = useToast();
   const renderer = useRenderer();
   const [showHelp, setShowHelp] = createSignal(false);
   const dims = useTerminalDimensions();
@@ -112,6 +117,7 @@ function AppShell(props: { repoPath: string }) {
   useKeyboard((event: any) => {
     const key = event.name;
     if (key === "escape") {
+      if (app.focusPickerData()) { app.setFocusPickerData(null); return; }
       if (app.showBulkActions()) { app.setShowBulkActions(false); return; }
       if (app.showDetailView()) { app.setShowDetailView(false); return; }
       if (app.showRemove()) { app.setShowRemove(false); return; }
@@ -123,6 +129,7 @@ function AppShell(props: { repoPath: string }) {
       app.setShowCommandPalette(true);
       return;
     }
+    if (app.focusPickerData()) return;
     if (app.inputFocused()) return;
     if (app.showCommandPalette()) return;
     if (app.showBulkActions()) return;
@@ -141,12 +148,31 @@ function AppShell(props: { repoPath: string }) {
       }
       if (key === "o") {
         const selected = selectedWorktree();
-        if (selected) {
-          const editor = process.env.VISUAL || process.env.EDITOR || detectEditorBin();
-          if (editor) {
-            Bun.spawn([editor, selected.path], { stdout: "inherit", stderr: "inherit" });
-          }
+        if (!selected) return;
+        const resolution = resolveFocusOpenTarget(selected.path);
+        if (resolution.kind === "multiple") {
+          app.setFocusPickerData({
+            worktreePath: selected.path,
+            focusPaths: resolution.focusPaths,
+          });
+          return;
         }
+        const editor = process.env.VISUAL || process.env.EDITOR || detectEditorBin();
+        if (!editor) {
+          toast.addToast({
+            message: "No editor detected. Set $VISUAL or $EDITOR.",
+            type: "error",
+          });
+          return;
+        }
+        if (!existsSync(resolution.path)) {
+          toast.addToast({
+            message: `Path does not exist: ${resolution.path}`,
+            type: "error",
+          });
+          return;
+        }
+        Bun.spawn([editor, resolution.path], { stdout: "inherit", stderr: "inherit" });
         return;
       }
     }
@@ -276,6 +302,10 @@ function AppShell(props: { repoPath: string }) {
       <Show when={app.showCommandPalette()}>
         <CommandPalette />
       </Show>
+
+      <FocusPicker
+        detectEditor={() => process.env.VISUAL || process.env.EDITOR || detectEditorBin()}
+      />
     </box>
   );
 }

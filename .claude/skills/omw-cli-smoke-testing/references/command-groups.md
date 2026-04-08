@@ -718,17 +718,31 @@ bun run src/index.ts unpin feature/smoke-test
 
 ### `open [branch-or-path]`
 
+Focus-aware editor open. Resolves the target path based on focus metadata:
+
+- 0 focus paths set → opens worktree root.
+- 1 focus path set → opens `<worktree>/<focus>` automatically.
+- 2+ focus paths set → exits with an error and asks for `--focus <path>` or `--root`.
+
 | Flag | Type | Alias | Description |
 |------|------|-------|-------------|
 | `--editor` | string | `-e` | Editor command to use |
+| `--focus` | string | `-f` | Open a specific focus path (must match an existing focus entry) |
+| `--root` | boolean | — | Force opening the worktree root, ignoring focus paths |
 | `--list-editors` | boolean | — | List detected editors |
 
 **Test invocations:**
 
 ```bash
-# open with explicit editor
+# Setup: 3 worktrees with no/single/multi focus
+mkdir -p apps/web apps/api && git add -A && git commit -m "pkgs"
+bun run src/index.ts add feature/smoke-test                          # no focus
+bun run src/index.ts add feature/smoke-single --focus apps/web       # 1 focus
+bun run src/index.ts add feature/smoke-multi --focus apps/web,apps/api  # 2+ focus
+
+# open with explicit editor (no focus → root)
 bun run src/index.ts open feature/smoke-test --editor /usr/bin/true
-# expect: exit 0, editor invoked with worktree path
+# expect: exit 0, "Opening <worktree-root> with /usr/bin/true..."
 
 # -e alias
 bun run src/index.ts open feature/smoke-test -e /usr/bin/true
@@ -741,6 +755,33 @@ bun run src/index.ts open --list-editors
 # no branch: open current worktree
 bun run src/index.ts open --editor /usr/bin/true
 # expect: exit 0, opens current worktree in editor
+
+# focus-aware: 1 focus path → opens that path automatically
+bun run src/index.ts open feature/smoke-single --editor /usr/bin/true
+# expect: exit 0, "Opening <worktree>/apps/web with /usr/bin/true [focus: apps/web]..."
+
+# focus-aware: 2+ focus paths without flag → error
+bun run src/index.ts open feature/smoke-multi --editor /usr/bin/true
+# expect: exit 1, "Error: worktree has multiple focus paths set: apps/web, apps/api"
+
+# --focus / -f: pick a specific focus path
+bun run src/index.ts open feature/smoke-multi --focus apps/api --editor /usr/bin/true
+# expect: exit 0, "Opening <worktree>/apps/api with /usr/bin/true [focus: apps/api]..."
+
+bun run src/index.ts open feature/smoke-multi -f apps/web --editor /usr/bin/true
+# expect: exit 0, "Opening <worktree>/apps/web with /usr/bin/true [focus: apps/web]..."
+
+# --root: force worktree root
+bun run src/index.ts open feature/smoke-multi --root --editor /usr/bin/true
+# expect: exit 0, "Opening <worktree-root> with /usr/bin/true..." (no focus label)
+
+# negative: --focus path that is not in the worktree's focus list
+bun run src/index.ts open feature/smoke-multi --focus apps/mobile --editor /usr/bin/true
+# expect: exit 1, "Error: Focus path 'apps/mobile' is not set; available: apps/web, apps/api."
+
+# negative: --focus on a worktree without any focus set
+bun run src/index.ts open feature/smoke-test --focus apps/web --editor /usr/bin/true
+# expect: exit 1, "Error: Focus path 'apps/web' is not set; no focus paths are set on this worktree."
 
 # negative: nonexistent branch
 bun run src/index.ts open feature/does-not-exist --editor /usr/bin/true

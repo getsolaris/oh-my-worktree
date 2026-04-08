@@ -167,9 +167,10 @@ Launch with `omw` (no arguments).
 | `j` / `k` | Navigate worktree list |
 | `a`       | Add worktree           |
 | `d`       | Delete worktree        |
+| `o`       | Open in editor (focus-aware) |
 | `h`       | Doctor (health check)  |
 | `Enter`   | Open detail view       |
-| `Escape`  | Close detail view      |
+| `Escape`  | Close detail view / picker |
 | `Space`   | Toggle worktree selection |
 | `Ctrl+A`  | Select all worktrees   |
 | `x`       | Bulk actions menu      |
@@ -177,6 +178,16 @@ Launch with `omw` (no arguments).
 | `Ctrl+P`  | Command palette        |
 | `?`       | Help                   |
 | `q`       | Quit                   |
+
+#### `o` — Focus-aware editor open
+
+Pressing `o` opens the selected worktree in `$VISUAL` / `$EDITOR`:
+
+- **No focus paths set** → opens the worktree root.
+- **Exactly 1 focus path** → opens `<worktree>/<focus>` directly.
+- **2+ focus paths** → shows a picker so you can choose which focus path (or the worktree root) to open.
+
+The picker supports `j`/`k` or `↑`/`↓` to navigate, `Enter` to open, and `Esc` to cancel.
 
 ### Command Palette (`Ctrl+P`)
 
@@ -275,6 +286,7 @@ Every commit runs `validateConfig` before writing. Invalid input surfaces as an 
 | `omw clone <url>`        | Clone repo and initialize omw        |
 | `omw import <path>`      | Adopt worktree with omw metadata     |
 | `omw session [branch]`   | Manage tmux sessions for worktrees   |
+| `omw open [branch]`      | Open a worktree in your editor (focus-aware) |
 | `omw init`               | Initialize config or install AI agent skills |
 
 ### `omw add`
@@ -458,6 +470,38 @@ omw add feature/login --session --layout api
 ```
 
 When `sessions.enabled` is `true` and you're inside tmux, `omw switch` automatically switches to the target worktree's tmux session.
+
+### `omw open`
+
+Open a worktree in your editor or IDE. Auto-detects `$VISUAL` / `$EDITOR` and falls back to a known list (`code`, `cursor`, `vim`, `nvim`, `emacs`, `nano`, `subl`, `zed`, `idea`, `webstorm`).
+
+```bash
+omw open                              # Open the current worktree
+omw open feature/auth                 # Open a specific worktree
+omw open feature/auth -e nvim         # Override editor
+
+# Focus-aware behavior (when the worktree was created with --focus)
+omw open feature/auth                 # 1 focus path → opens that focus
+                                      # 2+ focus paths → errors with hint
+omw open feature/auth --focus apps/web   # Pick a specific focus path
+omw open feature/auth -f apps/api        # Same with the short alias
+omw open feature/auth --root             # Force the worktree root, ignore focus
+
+omw open --list-editors               # List detected editors
+```
+
+| Flag | Alias | Description |
+| ---- | ----- | ----------- |
+| `--editor` | `-e` | Editor command to use (overrides `$VISUAL`/`$EDITOR`) |
+| `--focus` | `-f` | Open a specific focus path (must match a focus entry on the worktree) |
+| `--root` | | Force the worktree root, ignoring any focus paths |
+| `--list-editors` | | List detected editors |
+
+**Focus resolution rules:**
+
+- 0 focus paths set → opens the worktree root.
+- 1 focus path set → opens `<worktree>/<focus>` automatically.
+- 2+ focus paths set → errors out and asks for `--focus <path>` or `--root` (the TUI shows an interactive picker instead).
 
 ### `omw init`
 

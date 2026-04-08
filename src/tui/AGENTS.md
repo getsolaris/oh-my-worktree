@@ -18,15 +18,17 @@ App.tsx (launchTUI → render)
     │   ├── DoctorView (views/DoctorView.tsx) — health checks + auto-fix
     │   ├── ConfigView (views/ConfigView.tsx) — full config display + inline editing (string, strArray as JSON, boolean, theme, enum) with Tab-cycle through field-specific presets, via setNestedValue + writeAtomically
     │   ├── CommandPalette (views/CommandPalette.tsx) — Ctrl+P fuzzy search
+    │   ├── FocusPicker (views/FocusPicker.tsx) — modal picker for `o` key when worktree has 2+ focus paths
     │   └── Spinner (views/Spinner.tsx) — animated braille dots spinner
     └── Footer bar (keyboard hints)
 ```
 
 ## State Architecture
 
-**AppContext** (`activeTab`, `selectedWorktreeIndex`, `showRemove`, `showCommandPalette`)
+**AppContext** (`activeTab`, `selectedWorktreeIndex`, `showRemove`, `showCommandPalette`, `focusPickerData`)
 - `TabId = "list" | "add" | "config" | "doctor"`
-- Only ONE modal at a time (CommandPalette or Remove)
+- Only ONE modal at a time (CommandPalette, Remove, BulkActions, or FocusPicker)
+- `focusPickerData: { worktreePath, focusPaths } | null` — when set, FocusPicker is shown and the global `useKeyboard` yields to the picker's own handler
 
 **GitContext** (`worktrees`, `refetch`, `loading`, `error`)
 - `createResource` fetches worktrees on mount

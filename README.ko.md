@@ -152,16 +152,27 @@ omw init --skill claude-code
 | `j` / `k` | worktree 목록 탐색 |
 | `a` | worktree 추가 |
 | `d` | worktree 삭제 |
+| `o` | 에디터로 열기 (focus 인식) |
 | `h` | Doctor (헬스 체크) |
 | `r` | 목록 새로고침 |
 | `Ctrl+P` | 커맨드 팔레트 |
 | `Enter` | 상세 뷰 열기 |
-| `Escape` | 상세 뷰 닫기 |
+| `Escape` | 상세 뷰 / 피커 닫기 |
 | `Space` | worktree 선택 토글 |
 | `Ctrl+A` | 모든 worktree 선택 |
 | `x` | 일괄 작업 메뉴 |
 | `?` | 도움말 |
 | `q` | 종료 |
+
+#### `o` — Focus를 인식하는 에디터 열기
+
+`o`를 누르면 선택된 worktree를 `$VISUAL` / `$EDITOR`로 엽니다:
+
+- **focus 경로 없음** → worktree 루트를 엽니다.
+- **focus 경로 1개** → `<worktree>/<focus>`를 바로 엽니다.
+- **focus 경로 2개 이상** → 피커가 떠서 어떤 focus 경로(또는 worktree 루트)를 열지 선택할 수 있습니다.
+
+피커는 `j`/`k` 또는 `↑`/`↓`로 탐색, `Enter`로 열기, `Esc`로 취소합니다.
 
 ### 커맨드 팔레트 (`Ctrl+P`)
 
@@ -258,6 +269,7 @@ omw init --skill claude-code
 | `omw clone <url>` | 레포 클론 및 omw 초기화 |
 | `omw import <path>` | omw 메타데이터로 worktree 채택 |
 | `omw session [branch]` | worktree의 tmux 세션 관리 |
+| `omw open [branch]` | worktree를 에디터로 열기 (focus 인식) |
 | `omw init`             | 설정 초기화 또는 AI 에이전트 스킬 설치 |
 
 ### `omw add`
@@ -441,6 +453,38 @@ omw add feature/login --session --layout api
 ```
 
 `sessions.enabled`가 `true`이고 tmux 안에 있으면, `omw switch`가 대상 worktree의 tmux 세션으로 자동 전환합니다.
+
+### `omw open`
+
+worktree를 에디터/IDE로 엽니다. `$VISUAL` / `$EDITOR`를 자동 감지하고, 없으면 알려진 에디터 목록(`code`, `cursor`, `vim`, `nvim`, `emacs`, `nano`, `subl`, `zed`, `idea`, `webstorm`)에서 찾습니다.
+
+```bash
+omw open                              # 현재 worktree 열기
+omw open feature/auth                 # 특정 worktree 열기
+omw open feature/auth -e nvim         # 에디터 강제 지정
+
+# Focus 인식 동작 (--focus로 생성된 worktree에서)
+omw open feature/auth                 # focus 1개 → 해당 focus 경로로 열림
+                                      # focus 2개+ → 에러 + 힌트 출력
+omw open feature/auth --focus apps/web   # 특정 focus 경로 선택
+omw open feature/auth -f apps/api        # 짧은 별칭
+omw open feature/auth --root             # focus 무시하고 worktree 루트 강제
+
+omw open --list-editors               # 감지된 에디터 목록
+```
+
+| 플래그 | 별칭 | 설명 |
+| ------ | ---- | ---- |
+| `--editor` | `-e` | 사용할 에디터 (`$VISUAL`/`$EDITOR` 무시) |
+| `--focus` | `-f` | 특정 focus 경로 열기 (worktree에 설정된 focus 항목과 일치해야 함) |
+| `--root` | | focus를 무시하고 worktree 루트 강제 열기 |
+| `--list-editors` | | 감지된 에디터 목록 |
+
+**Focus 해석 규칙:**
+
+- focus 경로 없음 → worktree 루트를 엽니다.
+- focus 경로 1개 → `<worktree>/<focus>`를 자동으로 엽니다.
+- focus 경로 2개 이상 → 에러를 내고 `--focus <path>` 또는 `--root`를 요구합니다 (TUI에서는 대신 인터랙티브 피커를 띄웁니다).
 
 ### `omw init`
 

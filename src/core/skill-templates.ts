@@ -456,20 +456,25 @@ const referenceSpecs: ReferenceSpec[] = [
   },
   {
     command: "open",
-    summary: "Open the target or current worktree in an editor.",
+    summary: "Open the target or current worktree in an editor (focus-aware).",
     synopsis: "omw open [branch-or-path]",
     options: [
       { flag: "--editor", type: "string", alias: "-e", description: "Editor command to use" },
+      { flag: "--focus", type: "string", alias: "-f", description: "Open a specific focus path (must match an existing focus entry)" },
+      { flag: "--root", type: "boolean", alias: "-", description: "Force opening the worktree root, ignoring focus paths" },
       { flag: "--list-editors", type: "boolean", alias: "-", description: "List detected editors" },
     ],
     examples: [
       ["Open current worktree", "omw open"],
       ["Open with specific editor", "omw open feature/auth --editor nvim"],
+      ["Open a specific focus path", "omw open feature/auth --focus apps/web"],
+      ["Force open the worktree root", "omw open feature/auth --root"],
     ],
     notes: [
       "Auto-detects editors: code, cursor, vim, nvim, emacs, nano, subl, zed, idea, webstorm.",
       "Uses $VISUAL or $EDITOR env vars.",
       "Defaults to current worktree if no branch specified.",
+      "Focus-aware: 0 focus paths → root, 1 focus path → that path, 2+ focus paths → errors and asks for --focus or --root (the TUI shows an interactive picker instead).",
     ],
     configKeys: [],
   },

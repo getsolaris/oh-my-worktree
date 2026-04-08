@@ -10,7 +10,7 @@ Shared business logic for both CLI and TUI. No UI, no process.exit, no console o
 | `config.ts` | Config load/validate/expand | `loadConfig()`, `getRepoConfig()`, `expandTemplate()`, `validateConfig()` |
 | `doctor.ts` | Health checks + auto-fix | `runAllChecks()`, `runFixes()`, check functions |
 | `hooks.ts` | Shell command execution | `executeHooks()`, `HookError`, `HookTimeoutError` |
-| `focus.ts` | Monorepo focus metadata | `readFocus()`, `writeFocus()`, `hasFocus()` |
+| `focus.ts` | Monorepo focus metadata + open-target resolution | `readFocus()`, `writeFocus()`, `hasFocus()`, `resolveFocusOpenTarget()`, `FocusNotFoundError` |
 | `files.ts` | File copy/symlink ops | `copyFiles()`, `linkFiles()`, `cleanupFiles()` |
 | `monorepo.ts` | Workspace detection | `detectMonorepoTools()`, `discoverPackages()`, `validateFocusPaths()` |
 | `glob-hooks.ts` | Per-package hook matching | `matchHooksForFocus()`, `executeGlobHooks()` |

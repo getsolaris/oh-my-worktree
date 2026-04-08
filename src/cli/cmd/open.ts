@@ -1,6 +1,7 @@
 import type { CommandModule } from "yargs";
 import { GitWorktree } from "../../core/git.ts";
 import { existsSync } from "node:fs";
+import { FocusNotFoundError, resolveFocusOpenTarget } from "../../core/focus.ts";
 import { resolveMainRepo, findWorktreeOrExit, handleCliError } from "../utils.ts";
 
 const KNOWN_EDITORS = ["code", "cursor", "vim", "nvim", "emacs", "nano", "subl", "zed", "idea", "webstorm"] as const;
@@ -37,6 +38,16 @@ const cmd: CommandModule = {
         alias: "e",
         describe: "Editor command to use (overrides $VISUAL/$EDITOR)",
       })
+      .option("focus", {
+        type: "string",
+        alias: "f",
+        describe: "Open a specific focus path (must match an existing focus entry)",
+      })
+      .option("root", {
+        type: "boolean",
+        describe: "Force opening the worktree root, ignoring focus paths",
+        default: false,
+      })
       .option("list-editors", {
         type: "boolean",
         describe: "List detected editors",
@@ -64,20 +75,54 @@ const cmd: CommandModule = {
 
     try {
       const branchOrPath = argv["branch-or-path"] as string | undefined;
+      const explicitFocus = argv.focus as string | undefined;
+      const forceRoot = Boolean(argv.root);
 
-      let targetPath: string;
+      let worktreePath: string;
 
       if (!branchOrPath) {
-        targetPath = process.cwd();
+        worktreePath = process.cwd();
       } else {
         const mainRepoPath = await resolveMainRepo();
         const worktrees = await GitWorktree.list(mainRepoPath);
         const target = findWorktreeOrExit(worktrees, branchOrPath);
-        targetPath = target.path;
+        worktreePath = target.path;
       }
 
+      if (!existsSync(worktreePath)) {
+        console.error(`Error: worktree path does not exist: ${worktreePath}`);
+        process.exit(1);
+      }
+
+      let resolution;
+      try {
+        resolution = resolveFocusOpenTarget(worktreePath, { explicitFocus, forceRoot });
+      } catch (err) {
+        if (err instanceof FocusNotFoundError) {
+          console.error(`Error: ${err.message}`);
+          process.exit(1);
+        }
+        throw err;
+      }
+
+      let targetPath: string;
+      if (resolution.kind === "multiple") {
+        console.error(
+          `Error: worktree has multiple focus paths set: ${resolution.focusPaths.join(", ")}`,
+        );
+        console.error(
+          "Use --focus <path> to pick one, or --root to open the worktree root.",
+        );
+        process.exit(1);
+      }
+
+      targetPath = resolution.path;
+
       if (!existsSync(targetPath)) {
-        console.error(`Error: worktree path does not exist: ${targetPath}`);
+        console.error(`Error: target path does not exist: ${targetPath}`);
+        if (resolution.kind === "single") {
+          console.error("The focus path may have been deleted. Try --root to open the worktree root.");
+        }
         process.exit(1);
       }
 
@@ -90,7 +135,8 @@ const cmd: CommandModule = {
         process.exit(1);
       }
 
-      console.log(`Opening ${targetPath} with ${editor}...`);
+      const focusLabel = resolution.kind === "single" ? ` [focus: ${resolution.focus}]` : "";
+      console.log(`Opening ${targetPath} with ${editor}${focusLabel}...`);
 
       const proc = Bun.spawn([editor, targetPath], {
         stdout: "inherit",

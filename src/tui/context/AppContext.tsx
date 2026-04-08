@@ -2,6 +2,11 @@ import { createContext, createSignal, useContext, type JSX } from "solid-js";
 
 export type TabId = "list" | "add" | "config" | "doctor";
 
+export interface FocusPickerData {
+  worktreePath: string;
+  focusPaths: string[];
+}
+
 interface AppState {
   activeTab: () => TabId;
   setActiveTab: (tab: TabId) => void;
@@ -26,6 +31,8 @@ interface AppState {
   clearSelection: () => void;
   showBulkActions: () => boolean;
   setShowBulkActions: (v: boolean) => void;
+  focusPickerData: () => FocusPickerData | null;
+  setFocusPickerData: (data: FocusPickerData | null) => void;
 }
 
 const AppContext = createContext<AppState>();
@@ -44,6 +51,7 @@ export function AppProvider(props: {
   const [inputFocused, setInputFocused] = createSignal(false);
   const [selectedWorktrees, setSelectedWorktrees] = createSignal<Set<string>>(new Set());
   const [showBulkActions, setShowBulkActions] = createSignal(false);
+  const [focusPickerData, setFocusPickerData] = createSignal<FocusPickerData | null>(null);
 
   const toggleWorktreeSelection = (path: string) => {
     const next = new Set(selectedWorktrees());
@@ -105,6 +113,8 @@ export function AppProvider(props: {
         clearSelection,
         showBulkActions,
         setShowBulkActions,
+        focusPickerData,
+        setFocusPickerData,
       }}
     >
       {props.children}
