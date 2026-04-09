@@ -1,12 +1,12 @@
-# omw pin
+# oml pin
 
 Pin or unpin a worktree. Pinned worktrees are excluded from auto-cleanup operations.
 
 ## Usage
 
 ```
-omw pin [branch]
-omw unpin [branch]
+oml pin [branch]
+oml unpin [branch]
 ```
 
 ## Options
@@ -23,41 +23,41 @@ omw unpin [branch]
 ### Pin the current worktree
 
 ```bash
-omw pin
+oml pin
 ```
 
 ### Pin a specific worktree
 
 ```bash
-omw pin feature/login
+oml pin feature/login
 ```
 
 ### Pin with a reason
 
 ```bash
-omw pin feature/login --reason "long-running feature, do not clean"
+oml pin feature/login --reason "long-running feature, do not clean"
 ```
 
 ### List all pinned worktrees
 
 ```bash
-omw pin --list
+oml pin --list
 ```
 
 ### List pinned worktrees as JSON
 
 ```bash
-omw pin --list --json
+oml pin --list --json
 ```
 
 ### Unpin a worktree
 
 ```bash
-omw unpin feature/login
+oml unpin feature/login
 ```
 
 ### Unpin using the flag
 
 ```bash
-omw pin feature/login --unpin
+oml pin feature/login --unpin
 ```

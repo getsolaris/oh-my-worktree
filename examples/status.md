@@ -1,12 +1,12 @@
-# omw status
+# oml status
 
 Show a status overview of all worktrees.
 
 ## Usage
 
 ```
-omw status
-omw st
+oml status
+oml st
 ```
 
 ## Options
@@ -21,29 +21,29 @@ omw st
 ### Show status of all worktrees
 
 ```bash
-omw status
+oml status
 ```
 
 ### Use the short alias
 
 ```bash
-omw st
+oml st
 ```
 
 ### Output as JSON
 
 ```bash
-omw status --json
+oml status --json
 ```
 
 ### Show status across all configured repos
 
 ```bash
-omw status --all
+oml status --all
 ```
 
 ### Combine flags
 
 ```bash
-omw st -a -j
+oml st -a -j
 ```

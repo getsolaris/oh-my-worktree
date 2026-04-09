@@ -1,12 +1,12 @@
-# omw remove
+# oml remove
 
 Remove a worktree.
 
 ## Usage
 
 ```
-omw remove <branch-or-path>
-omw rm <branch-or-path>
+oml remove <branch-or-path>
+oml rm <branch-or-path>
 ```
 
 ## Options
@@ -21,29 +21,29 @@ omw rm <branch-or-path>
 ### Remove a worktree by branch name
 
 ```bash
-omw remove feature/login
+oml remove feature/login
 ```
 
 ### Use the short alias
 
 ```bash
-omw rm feature/login
+oml rm feature/login
 ```
 
 ### Force remove a worktree with uncommitted changes
 
 ```bash
-omw rm feature/experiment -f
+oml rm feature/experiment -f
 ```
 
 ### Skip the confirmation prompt
 
 ```bash
-omw rm feature/old-branch -y
+oml rm feature/old-branch -y
 ```
 
 ### Force remove without any prompts
 
 ```bash
-omw rm feature/abandoned -f -y
+oml rm feature/abandoned -f -y
 ```

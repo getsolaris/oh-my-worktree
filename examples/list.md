@@ -1,12 +1,12 @@
-# omw list
+# oml list
 
 List all worktrees with their status.
 
 ## Usage
 
 ```
-omw list
-omw ls
+oml list
+oml ls
 ```
 
 ## Options
@@ -22,35 +22,35 @@ omw ls
 ### List worktrees in the current repo
 
 ```bash
-omw list
+oml list
 ```
 
 ### Use the short alias
 
 ```bash
-omw ls
+oml ls
 ```
 
 ### Output as JSON (useful for scripting)
 
 ```bash
-omw list --json
+oml list --json
 ```
 
 ### Machine-readable output
 
 ```bash
-omw list --porcelain
+oml list --porcelain
 ```
 
 ### List worktrees across all configured repos
 
 ```bash
-omw list --all
+oml list --all
 ```
 
 ### Pipe JSON output to jq for filtering
 
 ```bash
-omw list --json | jq '.[] | select(.dirty == true)'
+oml list --json | jq '.[] | select(.dirty == true)'
 ```

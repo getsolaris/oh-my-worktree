@@ -118,7 +118,7 @@ describe("executeGlobHooks", () => {
     expect(output.some(line => line.includes("HOOK_EXECUTED"))).toBeTrue();
   });
 
-  it("sets OMW_PACKAGE_PATH env var in hooks", async () => {
+  it("sets OML_PACKAGE_PATH env var in hooks", async () => {
     const repoPath = await createTempRepo();
     const output: string[] = [];
 
@@ -128,7 +128,7 @@ describe("executeGlobHooks", () => {
         matchedPaths: ["apps/web"],
         copyFiles: [],
         linkFiles: [],
-        postCreate: ["echo $OMW_PACKAGE_PATH"],
+        postCreate: ["echo $OML_PACKAGE_PATH"],
         postRemove: [],
       },
     ];

@@ -1,20 +1,20 @@
-# omw session
+# oml session
 
 Manage tmux sessions for worktrees. Requires tmux.
 
 ## Usage
 
 ```
-omw session [branch-or-path]
+oml session [branch-or-path]
 ```
 
 ## Options
 
 | Flag | Alias | Description |
 |------|-------|-------------|
-| `--list` | `-l` | List active omw tmux sessions |
+| `--list` | `-l` | List active oml tmux sessions |
 | `--kill` | `-k` | Kill the session for the specified worktree |
-| `--kill-all` | | Kill all omw tmux sessions |
+| `--kill-all` | | Kill all oml tmux sessions |
 | `--layout` | | Use a named layout from config |
 | `--json` | `-j` | Output in JSON format |
 
@@ -23,7 +23,7 @@ omw session [branch-or-path]
 ### Open a session for a worktree
 
 ```bash
-omw session feature/auth
+oml session feature/auth
 ```
 
 If a session exists, attaches to it. Otherwise creates one and attaches.
@@ -31,46 +31,46 @@ If a session exists, attaches to it. Otherwise creates one and attaches.
 ### Open with a specific layout
 
 ```bash
-omw session feature/auth --layout api
+oml session feature/auth --layout api
 ```
 
 ### List active sessions
 
 ```bash
-omw session --list
+oml session --list
 ```
 
 ```
 Active sessions (3):
 
-  omw_feat-auth-token  feat/auth-token  3 windows [api]
-  omw_feat-user-api    feat/user-api    3 windows [api] (attached)
-  omw_fix-gateway      fix/gateway      1 windows
+  oml_feat-auth-token  feat/auth-token  3 windows [api]
+  oml_feat-user-api    feat/user-api    3 windows [api] (attached)
+  oml_fix-gateway      fix/gateway      1 windows
 ```
 
 ### List as JSON
 
 ```bash
-omw session --list --json
+oml session --list --json
 ```
 
 ### Kill a session
 
 ```bash
-omw session feature/auth --kill
+oml session feature/auth --kill
 ```
 
-### Kill all omw sessions
+### Kill all oml sessions
 
 ```bash
-omw session --kill-all
+oml session --kill-all
 ```
 
 ### Create worktree with session
 
 ```bash
-omw add feature/login --session
-omw add feature/login --session --layout api
+oml add feature/login --session
+oml add feature/login --session --layout api
 ```
 
 ### Auto-create/kill via config
@@ -94,9 +94,9 @@ omw add feature/login --session --layout api
 }
 ```
 
-With `autoCreate: true`, every `omw add` automatically creates a tmux session.
-With `autoKill: true`, every `omw remove` automatically kills the associated session.
+With `autoCreate: true`, every `oml add` automatically creates a tmux session.
+With `autoKill: true`, every `oml remove` automatically kills the associated session.
 
 ### Auto-switch in tmux
 
-With `sessions.enabled: true`, running `omw switch` inside tmux automatically switches to the target worktree's tmux session instead of outputting a `cd` command.
+With `sessions.enabled: true`, running `oml switch` inside tmux automatically switches to the target worktree's tmux session instead of outputting a `cd` command.

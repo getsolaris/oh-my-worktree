@@ -14,20 +14,20 @@ import {
 afterEach(cleanupTempDirs);
 
 describe("getFocusFilePath", () => {
-  it("returns .git/omw-focus for main worktree", async () => {
+  it("returns .git/oml-focus for main worktree", async () => {
     const repoPath = await createTempRepo();
     const focusPath = getFocusFilePath(repoPath);
-    expect(focusPath).toBe(join(repoPath, ".git", "omw-focus"));
+    expect(focusPath).toBe(join(repoPath, ".git", "oml-focus"));
   });
 
   it("returns git metadata dir path for linked worktree", async () => {
     const repoPath = await createTempRepo();
-    const wtPath = createTempDir("omw-focus-wt-");
+    const wtPath = createTempDir("oml-focus-wt-");
     await runGit(["worktree", "add", wtPath, "-b", "test-focus"], repoPath);
 
     const focusPath = getFocusFilePath(wtPath);
     expect(focusPath).not.toContain(join(wtPath, ".git"));
-    expect(focusPath).toContain("omw-focus");
+    expect(focusPath).toContain("oml-focus");
     expect(focusPath).toContain(repoPath);
   });
 });
@@ -42,14 +42,14 @@ describe("writeFocus and readFocus", () => {
 
   it("writes and reads focus for linked worktree", async () => {
     const repoPath = await createTempRepo();
-    const wtPath = createTempDir("omw-focus-rw-");
+    const wtPath = createTempDir("oml-focus-rw-");
     await runGit(["worktree", "add", wtPath, "-b", "test-focus-rw"], repoPath);
 
     writeFocus(wtPath, ["apps/web", "apps/api"]);
     const result = readFocus(wtPath);
     expect(result).toEqual(["apps/web", "apps/api"]);
 
-    expect(existsSync(join(wtPath, ".omw-focus"))).toBeFalse();
+    expect(existsSync(join(wtPath, ".oml-focus"))).toBeFalse();
   });
 
   it("returns null when no focus file exists", async () => {

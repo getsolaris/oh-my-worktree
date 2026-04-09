@@ -30,7 +30,7 @@ Trust the source code over this file if they diverge.
 ```bash
 # --init: creates config file
 bun run src/index.ts config --init
-# expect: exit 0, config file created at $XDG_CONFIG_HOME/oh-my-worktree/config.json
+# expect: exit 0, config file created at $XDG_CONFIG_HOME/oh-my-lemontree/config.json
 
 # --path: prints config path
 bun run src/index.ts config --path
@@ -82,15 +82,15 @@ bun run src/index.ts config --delete
 ```bash
 # no flags: creates config.json
 bun run src/index.ts init
-# expect: exit 0, config.json created at $XDG_CONFIG_HOME/oh-my-worktree/config.json
+# expect: exit 0, config.json created at $XDG_CONFIG_HOME/oh-my-lemontree/config.json
 
 # --skill claude-code: installs claude-code skill
 bun run src/index.ts init --skill claude-code
-# expect: exit 0, skill files written to $HOME/.claude/skills/omw/
+# expect: exit 0, skill files written to $HOME/.claude/skills/oml/
 
 # --skill opencode: installs opencode skill
 bun run src/index.ts init --skill opencode
-# expect: exit 0, skill files written to $XDG_CONFIG_HOME/opencode/skill/omw/
+# expect: exit 0, skill files written to $XDG_CONFIG_HOME/opencode/skill/oml/
 
 # -s alias
 bun run src/index.ts init -s claude-code
@@ -611,7 +611,7 @@ bun run src/index.ts exec "echo hello" --dirty --clean
 # expect: exit 1 or empty result (mutually exclusive filters)
 
 # env vars available in command
-bun run src/index.ts exec "echo \$OMW_BRANCH"
+bun run src/index.ts exec "echo \$OML_BRANCH"
 # expect: exit 0, branch name printed for each worktree
 ```
 
@@ -797,7 +797,7 @@ bun run src/index.ts open feature/does-not-exist --editor /usr/bin/true
 | Flag | Type | Alias | Description |
 |------|------|-------|-------------|
 | `--template` | string | `-t` | Apply named template after cloning |
-| `--init-config` | boolean | — | Initialize omw config (default: true) |
+| `--init-config` | boolean | — | Initialize oml config (default: true) |
 
 **Test invocations:**
 
@@ -841,7 +841,7 @@ bun run src/index.ts clone file://$TMPDIR/remote.git $TMPDIR/cloned-repo
 ```bash
 # basic import of manually-created worktree
 bun run src/index.ts import $TMPDIR/manual-worktree
-# expect: exit 0, worktree adopted with omw metadata
+# expect: exit 0, worktree adopted with oml metadata
 
 # --focus: set focus packages
 bun run src/index.ts import $TMPDIR/manual-worktree --focus apps/web
@@ -888,7 +888,7 @@ bun run src/index.ts import $TMPDIR/not-a-worktree
 ```bash
 # archive and remove
 bun run src/index.ts archive feature/smoke-test --yes
-# expect: exit 0, patch file created in ~/.omw/archives/, worktree removed
+# expect: exit 0, patch file created in ~/.oml/archives/, worktree removed
 
 # -y alias
 bun run src/index.ts archive feature/smoke-test -y
@@ -929,7 +929,7 @@ bun run src/index.ts archive feature/smoke-test < /dev/null
 |------|------|-------|-------------|
 | `--list` | boolean | `-l` | List active sessions |
 | `--kill` | boolean | `-k` | Kill session for given worktree |
-| `--kill-all` | boolean | — | Kill all omw-managed sessions |
+| `--kill-all` | boolean | — | Kill all oml-managed sessions |
 | `--layout` | string | — | Layout name from config |
 | `--json` | boolean | `-j` | JSON output |
 
@@ -946,7 +946,7 @@ bun run src/index.ts ss feature/smoke-test
 
 # --list: list active sessions
 bun run src/index.ts session --list
-# expect: exit 0, lists omw-managed tmux sessions
+# expect: exit 0, lists oml-managed tmux sessions
 
 # -l alias
 bun run src/index.ts session -l
@@ -968,9 +968,9 @@ bun run src/index.ts session feature/smoke-test --kill
 bun run src/index.ts session feature/smoke-test -k
 # expect: exit 0, same as --kill
 
-# --kill-all: kill all omw sessions
+# --kill-all: kill all oml sessions
 bun run src/index.ts session --kill-all
-# expect: exit 0, all omw-prefixed tmux sessions killed
+# expect: exit 0, all oml-prefixed tmux sessions killed
 
 # --layout: use named layout
 bun run src/index.ts session feature/smoke-test --layout dev

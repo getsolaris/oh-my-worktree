@@ -108,8 +108,8 @@ export async function executeGlobHooks(
 
         const env: Record<string, string> = {
           ...(opts.env ?? {}),
-          OMW_FOCUS_PATHS: opts.focusPaths.join(","),
-          OMW_PACKAGE_PATH: packagePath,
+          OML_FOCUS_PATHS: opts.focusPaths.join(","),
+          OML_PACKAGE_PATH: packagePath,
         };
 
         await executeHooks(expandedCommands, {

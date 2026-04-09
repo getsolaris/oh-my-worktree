@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { dirname } from "path";
-import { getConfigPath, loadConfig, type OmwConfig, writeAtomically } from "./config.ts";
+import { getConfigPath, loadConfig, type OmlConfig, writeAtomically } from "./config.ts";
 
-interface ProfileConfig extends OmwConfig {
+interface ProfileConfig extends OmlConfig {
   profiles?: Record<string, Record<string, unknown>>;
   activeProfile?: string;
 }
@@ -93,11 +93,11 @@ function writeProfileConfig(config: ProfileConfig): void {
   }
 }
 
-export function listProfiles(config: OmwConfig): string[] {
+export function listProfiles(config: OmlConfig): string[] {
   return Object.keys((config as ProfileConfig).profiles ?? {});
 }
 
-export function getProfile(config: OmwConfig, name: string): Record<string, unknown> | null {
+export function getProfile(config: OmlConfig, name: string): Record<string, unknown> | null {
   return ((config as ProfileConfig).profiles ?? {})[name] ?? null;
 }
 
@@ -106,18 +106,18 @@ export function setActiveProfile(name: string): void {
   writeProfileConfig({ ...config, activeProfile: name });
 }
 
-export function getActiveProfile(config: OmwConfig): string | null {
+export function getActiveProfile(config: OmlConfig): string | null {
   return (config as ProfileConfig).activeProfile ?? null;
 }
 
-export function applyProfile(config: OmwConfig, name: string): OmwConfig {
+export function applyProfile(config: OmlConfig, name: string): OmlConfig {
   const profile = getProfile(config, name);
 
   if (!profile) {
-    return deepMerge(config, {}) as OmwConfig;
+    return deepMerge(config, {}) as OmlConfig;
   }
 
-  return deepMerge(config, profile) as OmwConfig;
+  return deepMerge(config, profile) as OmlConfig;
 }
 
 export function createProfile(name: string, overrides: Record<string, unknown>): void {

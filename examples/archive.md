@@ -1,11 +1,11 @@
-# omw archive
+# oml archive
 
 Archive worktree changes as a patch file and optionally remove the worktree.
 
 ## Usage
 
 ```
-omw archive [branch]
+oml archive [branch]
 ```
 
 ## Options
@@ -22,35 +22,35 @@ omw archive [branch]
 ### Archive and remove the current worktree
 
 ```bash
-omw archive
+oml archive
 ```
 
 ### Archive a specific worktree
 
 ```bash
-omw archive feature/experiment
+oml archive feature/experiment
 ```
 
 ### Archive without removing
 
 ```bash
-omw archive feature/wip --keep
+oml archive feature/wip --keep
 ```
 
 ### Archive without confirmation
 
 ```bash
-omw archive feature/old -y
+oml archive feature/old -y
 ```
 
 ### List all archives
 
 ```bash
-omw archive --list
+oml archive --list
 ```
 
 ### List archives as JSON
 
 ```bash
-omw archive --list --json
+oml archive --list --json
 ```

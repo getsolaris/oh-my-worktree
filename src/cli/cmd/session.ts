@@ -27,7 +27,7 @@ const cmd: CommandModule = {
       .option("list", {
         type: "boolean",
         alias: "l",
-        describe: "List active omw tmux sessions",
+        describe: "List active oml tmux sessions",
       })
       .option("kill", {
         type: "boolean",
@@ -36,7 +36,7 @@ const cmd: CommandModule = {
       })
       .option("kill-all", {
         type: "boolean",
-        describe: "Kill all omw tmux sessions",
+        describe: "Kill all oml tmux sessions",
       })
       .option("layout", {
         type: "string",
@@ -141,7 +141,7 @@ async function handleList(
   }
 
   if (sessions.length === 0) {
-    console.log("No active omw sessions.");
+    console.log("No active oml sessions.");
     return;
   }
 
@@ -169,7 +169,7 @@ async function handleKillAll(
   ]);
 
   if (sessions.length === 0) {
-    console.log("No active omw sessions.");
+    console.log("No active oml sessions.");
     return;
   }
 

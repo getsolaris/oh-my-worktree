@@ -250,9 +250,9 @@ export function WorktreeCreate() {
           }
 
           const hookEnv: Record<string, string> = {
-            OMW_BRANCH: branch,
-            OMW_WORKTREE_PATH: wtPath,
-            OMW_REPO_PATH: repoPath,
+            OML_BRANCH: branch,
+            OML_WORKTREE_PATH: wtPath,
+            OML_REPO_PATH: repoPath,
           };
 
           // Running hooks
@@ -274,7 +274,7 @@ export function WorktreeCreate() {
             focusPaths = valid;
             if (valid.length > 0) {
               writeFocus(wtPath, valid);
-              hookEnv.OMW_FOCUS_PATHS = valid.join(",");
+              hookEnv.OML_FOCUS_PATHS = valid.join(",");
             }
             updateStep(stepIdx, { status: "done" });
             stepIdx++;

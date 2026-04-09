@@ -35,7 +35,7 @@ const cmd: CommandModule = {
       process.exit(report.healthy ? 0 : 1);
     }
 
-    console.log("oh-my-worktree doctor\n");
+    console.log("oh-my-lemontree doctor\n");
     for (const check of report.checks) {
       const icon =
         check.status === "pass"

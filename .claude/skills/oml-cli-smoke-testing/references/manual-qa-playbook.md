@@ -1,6 +1,6 @@
 # Manual QA Playbook
 
-Use this playbook for full `omw` CLI smoke testing.
+Use this playbook for full `oml` CLI smoke testing.
 
 ## Source of Truth
 
@@ -42,7 +42,7 @@ git init --bare "$TMPROOT/remote.git"
 git remote add origin "$TMPROOT/remote.git"
 git push -u origin main
 
-# Initialize omw config
+# Initialize oml config
 bun run src/index.ts config --init
 ```
 
@@ -90,8 +90,8 @@ Run against temp `HOME` / `XDG_CONFIG_HOME`. No real repo needed for most of the
 
 ```bash
 bun run src/index.ts config --init
-# post-condition: file exists at $XDG_CONFIG_HOME/oh-my-worktree/config.json
-ls "$XDG_CONFIG_HOME/oh-my-worktree/config.json"
+# post-condition: file exists at $XDG_CONFIG_HOME/oh-my-lemontree/config.json
+ls "$XDG_CONFIG_HOME/oh-my-lemontree/config.json"
 ```
 
 Expected: exit 0, file created.
@@ -123,7 +123,7 @@ bun run src/index.ts config --validate
 # expect: exit 0
 
 # invalid config (manually corrupt the file)
-echo '{"version": "bad"}' > "$XDG_CONFIG_HOME/oh-my-worktree/config.json"
+echo '{"version": "bad"}' > "$XDG_CONFIG_HOME/oh-my-lemontree/config.json"
 bun run src/index.ts config --validate
 # expect: exit 1, validation error message
 # restore config
@@ -181,7 +181,7 @@ bun run src/index.ts config --delete
 ```bash
 bun run src/index.ts init
 # post-condition: config.json exists
-ls "$XDG_CONFIG_HOME/oh-my-worktree/config.json"
+ls "$XDG_CONFIG_HOME/oh-my-lemontree/config.json"
 # expect: exit 0
 ```
 
@@ -190,7 +190,7 @@ ls "$XDG_CONFIG_HOME/oh-my-worktree/config.json"
 ```bash
 bun run src/index.ts init --skill claude
 # post-condition: skill files exist
-ls "$HOME/.claude/skills/omw/SKILL.md"
+ls "$HOME/.claude/skills/oml/SKILL.md"
 # expect: exit 0
 ```
 
@@ -206,7 +206,7 @@ bun run src/index.ts init -s claude
 ```bash
 bun run src/index.ts init --skill opencode
 # post-condition: skill files exist
-ls "$XDG_CONFIG_HOME/opencode/skill/omw/SKILL.md"
+ls "$XDG_CONFIG_HOME/opencode/skill/oml/SKILL.md"
 # expect: exit 0
 ```
 
@@ -231,7 +231,7 @@ bun run src/index.ts init
 
 ```bash
 bun run src/index.ts shell-init bash
-# expect: exit 0, shell function definition on stdout (contains "omw()")
+# expect: exit 0, shell function definition on stdout (contains "oml()")
 ```
 
 #### `shell-init zsh`
@@ -446,7 +446,7 @@ bun run src/index.ts diff feature/does-not-exist
 #### `exec <command>` (read-only variant)
 
 ```bash
-bun run src/index.ts exec "echo \$OMW_BRANCH"
+bun run src/index.ts exec "echo \$OML_BRANCH"
 # expect: exit 0, branch name printed for each worktree
 ```
 
@@ -583,7 +583,7 @@ git worktree list --porcelain | grep "feature/smoke-c"
 ```bash
 bun run src/index.ts add feature/smoke-focus --focus apps/web
 # post-condition: focus metadata stored in git internals
-cat "$(git rev-parse --git-dir)/omw-focus" 2>/dev/null || echo "check git internals"
+cat "$(git rev-parse --git-dir)/oml-focus" 2>/dev/null || echo "check git internals"
 # expect: exit 0
 
 bun run src/index.ts add feature/smoke-focus-multi --focus apps/web,apps/api
@@ -600,7 +600,7 @@ bun run src/index.ts add feature/smoke-f -f apps/web
 
 ```bash
 # First add a template to config
-# (manually edit $XDG_CONFIG_HOME/oh-my-worktree/config.json to add "review" template)
+# (manually edit $XDG_CONFIG_HOME/oh-my-lemontree/config.json to add "review" template)
 bun run src/index.ts add feature/smoke-template --template review
 # expect: exit 0 if template exists
 
@@ -924,7 +924,7 @@ ls "$TMPROOT/cloned-basic"
 bun run src/index.ts clone "file://$TMPROOT/remote.git" "$TMPROOT/cloned-noinit" --no-init-config
 ls "$TMPROOT/cloned-noinit"
 ls "$TMPROOT/cloned-noinit/.config" 2>/dev/null && echo "FAIL: config created" || echo "OK: no config"
-# expect: exit 0, no omw config created
+# expect: exit 0, no oml config created
 
 # --template / -t (requires template in config)
 bun run src/index.ts clone "file://$TMPROOT/remote.git" "$TMPROOT/cloned-tmpl" --template review
@@ -996,7 +996,7 @@ bun run src/index.ts add feature/smoke-archive
 # archive and remove
 bun run src/index.ts archive feature/smoke-archive --yes
 git worktree list --porcelain | grep "feature/smoke-archive"
-# expect: exit 0, worktree removed; patch file in ~/.omw/archives/
+# expect: exit 0, worktree removed; patch file in ~/.oml/archives/
 
 # -y alias
 bun run src/index.ts add feature/smoke-archive-y
@@ -1043,8 +1043,8 @@ export TMUX_TMPDIR="$TMPROOT/tmux"
 mkdir -p "$TMUX_TMPDIR"
 TMUX_SOCKET="$TMPROOT/tmux/test.sock"
 
-# Add sessions config to omw config with unique prefix
-# (manually patch $XDG_CONFIG_HOME/oh-my-worktree/config.json)
+# Add sessions config to oml config with unique prefix
+# (manually patch $XDG_CONFIG_HOME/oh-my-lemontree/config.json)
 # "sessions": { "enabled": true, "prefix": "omwqa" }
 ```
 
@@ -1053,7 +1053,7 @@ TMUX_SOCKET="$TMPROOT/tmux/test.sock"
 ```bash
 bun run src/index.ts session --list
 bun run src/index.ts session -l
-# expect: exit 0, lists omw-managed sessions (empty is valid)
+# expect: exit 0, lists oml-managed sessions (empty is valid)
 ```
 
 #### `session --list --json` / `-j`

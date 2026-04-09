@@ -1,11 +1,11 @@
-# omw exec
+# oml exec
 
 Run a command in each worktree.
 
 ## Usage
 
 ```
-omw exec <command>
+oml exec <command>
 ```
 
 ## Options
@@ -24,47 +24,47 @@ omw exec <command>
 ### Run a command in every worktree
 
 ```bash
-omw exec "git status"
+oml exec "git status"
 ```
 
 ### Run only in dirty worktrees
 
 ```bash
-omw exec "git stash" --dirty
+oml exec "git stash" --dirty
 ```
 
 ### Run only in clean worktrees
 
 ```bash
-omw exec "git pull" --clean
+oml exec "git pull" --clean
 ```
 
 ### Run only in worktrees behind upstream
 
 ```bash
-omw exec "git pull --rebase" --behind
+oml exec "git pull --rebase" --behind
 ```
 
 ### Run in parallel for faster execution
 
 ```bash
-omw exec "npm install" --parallel
+oml exec "npm install" --parallel
 ```
 
 ### Run across all configured repos
 
 ```bash
-omw exec "git fetch" --all
+oml exec "git fetch" --all
 ```
 
 ### Output results as JSON
 
 ```bash
-omw exec "git log -1 --oneline" --json
+oml exec "git log -1 --oneline" --json
 ```
 
 ### Combine filters with parallel execution
 
 ```bash
-omw exec "npm test" --dirty --parallel
+oml exec "npm test" --dirty --parallel
 ```

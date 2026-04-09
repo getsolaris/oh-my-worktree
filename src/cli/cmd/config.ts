@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 
 const cmd: CommandModule = {
   command: "config",
-  describe: "Manage oh-my-worktree configuration",
+  describe: "Manage oh-my-lemontree configuration",
   builder: (yargs) =>
     yargs
       .option("init", {
@@ -121,7 +121,7 @@ const cmd: CommandModule = {
       process.exit(0);
     }
 
-    console.log("Usage: omw config [options]");
+    console.log("Usage: oml config [options]");
     console.log("");
     console.log("Options:");
     console.log("  --init      Create default config file");

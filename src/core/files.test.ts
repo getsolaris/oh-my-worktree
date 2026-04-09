@@ -24,8 +24,8 @@ describe("copyFiles", () => {
   let dstDir: string;
 
   function setup() {
-    srcDir = createTempDir("omw-files-test-");
-    dstDir = createTempDir("omw-files-test-");
+    srcDir = createTempDir("oml-files-test-");
+    dstDir = createTempDir("oml-files-test-");
   }
 
   afterEach(() => {
@@ -85,8 +85,8 @@ describe("linkFiles", () => {
   let dstDir: string;
 
   function setup() {
-    srcDir = createTempDir("omw-files-test-");
-    dstDir = createTempDir("omw-files-test-");
+    srcDir = createTempDir("oml-files-test-");
+    dstDir = createTempDir("oml-files-test-");
   }
 
   afterEach(() => {
@@ -164,8 +164,8 @@ describe("applySharedDeps", () => {
   let dstDir: string;
 
   function setup() {
-    srcDir = createTempDir("omw-shared-deps-");
-    dstDir = createTempDir("omw-shared-deps-");
+    srcDir = createTempDir("oml-shared-deps-");
+    dstDir = createTempDir("oml-shared-deps-");
   }
 
   afterEach(() => {
@@ -191,7 +191,7 @@ describe("cleanupFiles", () => {
   let dir: string;
 
   function setup() {
-    dir = createTempDir("omw-files-test-");
+    dir = createTempDir("oml-files-test-");
   }
 
   afterEach(() => {
@@ -209,7 +209,7 @@ describe("cleanupFiles", () => {
 
   it("removes a symlink without removing the source", () => {
     setup();
-    const sourceDir = createTempDir("omw-files-test-");
+    const sourceDir = createTempDir("oml-files-test-");
     const realDir = join(sourceDir, "real");
     mkdirSync(realDir);
     writeFileSync(join(realDir, "keep.txt"), "important");

@@ -1,13 +1,13 @@
-# omw config
+# oml config
 
-Manage oh-my-worktree configuration.
+Manage oh-my-lemontree configuration.
 
-Configuration is stored at `~/.config/oh-my-worktree/config.json` (XDG-compliant).
+Configuration is stored at `~/.config/oh-my-lemontree/config.json` (XDG-compliant).
 
 ## Usage
 
 ```
-omw config [flags]
+oml config [flags]
 ```
 
 ## Options
@@ -29,47 +29,47 @@ omw config [flags]
 ### Create a default config file
 
 ```bash
-omw config --init
+oml config --init
 ```
 
 ### Show current configuration
 
 ```bash
-omw config --show
+oml config --show
 ```
 
 ### Open config in your editor
 
 ```bash
-omw config --edit
+oml config --edit
 ```
 
 ### Print the config file path
 
 ```bash
-omw config --path
+oml config --path
 ```
 
 ### Validate your config
 
 ```bash
-omw config --validate
+oml config --validate
 ```
 
 ### List available profiles
 
 ```bash
-omw config --profiles
+oml config --profiles
 ```
 
 ### Activate a profile
 
 ```bash
-omw config --profile work --activate
+oml config --profile work --activate
 ```
 
 ### Delete a profile
 
 ```bash
-omw config --profile old-setup --delete
+oml config --profile old-setup --delete
 ```

@@ -1,12 +1,12 @@
-# omw log
+# oml log
 
 Show the worktree activity log. Tracks events like create, delete, switch, rename, archive, and import.
 
 ## Usage
 
 ```
-omw log
-omw logs
+oml log
+oml logs
 ```
 
 ## Options
@@ -22,35 +22,35 @@ omw logs
 ### Show recent activity
 
 ```bash
-omw log
+oml log
 ```
 
 ### Show the last 5 entries
 
 ```bash
-omw log --limit 5
+oml log --limit 5
 ```
 
 ### Show the last 50 entries
 
 ```bash
-omw log --limit 50
+oml log --limit 50
 ```
 
 ### Output as JSON
 
 ```bash
-omw log --json
+oml log --json
 ```
 
 ### Clear the activity log
 
 ```bash
-omw log --clear
+oml log --clear
 ```
 
 ### Use the alias
 
 ```bash
-omw logs
+oml logs
 ```

@@ -1,11 +1,11 @@
-# omw rename
+# oml rename
 
 Rename a worktree's branch.
 
 ## Usage
 
 ```
-omw rename <old> <new>
+oml rename <old> <new>
 ```
 
 ## Options
@@ -19,11 +19,11 @@ omw rename <old> <new>
 ### Rename a branch
 
 ```bash
-omw rename feature/old-name feature/new-name
+oml rename feature/old-name feature/new-name
 ```
 
 ### Rename a branch and move the directory
 
 ```bash
-omw rename feature/login feature/authentication --move-path
+oml rename feature/login feature/authentication --move-path
 ```

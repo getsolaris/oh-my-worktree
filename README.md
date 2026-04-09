@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="./banner.png" alt="oh-my-worktree" />
+  <img src="./banner.png" alt="oh-my-lemontree" />
 </p>
 
-# 🌳 oh-my-worktree
+# 🌳 oh-my-lemontree
 
 **English** | [Korean](./README.ko.md)
 
@@ -12,35 +12,35 @@ Manage git worktrees with ease. Create, switch, and clean up worktrees with conf
 
 ## Features
 
-- **TUI mode** — interactive terminal UI (`omw`)
-- **CLI mode** — scriptable commands (`omw add`, `omw list`, etc.)
+- **TUI mode** — interactive terminal UI (`oml`)
+- **CLI mode** — scriptable commands (`oml add`, `oml list`, etc.)
 - **Config-driven** — per-repo hooks, file copying, symlinks
 - **Monorepo support** — auto-detect packages, per-package hooks, focus tracking
-- **Health checks** — `omw doctor` diagnoses worktree issues
-- **Centralized worktrees** — all worktrees under `~/.omw/worktrees/` by default
+- **Health checks** — `oml doctor` diagnoses worktree issues
+- **Centralized worktrees** — all worktrees under `~/.oml/worktrees/` by default
 - **Smart cleanup** — auto-detect and remove merged worktrees
 - **Themes** — 9 built-in color themes (OpenCode, Tokyo Night, Dracula, Nord, Catppuccin, GitHub Dark, One Dark, Monokai, GitHub Light)
-- **Templates** — reusable worktree presets (`omw add --template review`)
-- **Cross-worktree exec** — run commands across all worktrees (`omw exec "bun test"`)
-- **GitHub PR integration** — create worktrees from PRs (`omw add --pr 123`)
+- **Templates** — reusable worktree presets (`oml add --template review`)
+- **Cross-worktree exec** — run commands across all worktrees (`oml exec "bun test"`)
+- **GitHub PR integration** — create worktrees from PRs (`oml add --pr 123`)
 - **Fuzzy branch picker** — interactive branch selection in TUI with type-ahead filtering
 - **Lifecycle management** — auto-detect stale/merged worktrees, configurable limits
 - **Shared dependencies** — save disk with hardlink/symlink strategies for `node_modules`
-- **Worktree diff** — compare changes between worktrees (`omw diff feature/a feature/b`)
-- **Pin protection** — protect worktrees from auto-cleanup (`omw pin`)
-- **Activity log** — track create/delete/switch/rename/archive/import events (`omw log`)
-- **Archive** — preserve worktree changes as patches before removal (`omw archive`)
-- **Branch rename** — rename worktree branches with metadata migration (`omw rename`)
-- **Clone & init** — clone repos with omw config initialization (`omw clone`)
-- **Import worktrees** — adopt manually-created worktrees (`omw import`)
+- **Worktree diff** — compare changes between worktrees (`oml diff feature/a feature/b`)
+- **Pin protection** — protect worktrees from auto-cleanup (`oml pin`)
+- **Activity log** — track create/delete/switch/rename/archive/import events (`oml log`)
+- **Archive** — preserve worktree changes as patches before removal (`oml archive`)
+- **Branch rename** — rename worktree branches with metadata migration (`oml rename`)
+- **Clone & init** — clone repos with oml config initialization (`oml clone`)
+- **Import worktrees** — adopt manually-created worktrees (`oml import`)
 - **Detail view** — expanded worktree info with commits, diff stats, upstream status (TUI)
 - **Bulk actions** — multi-select and batch operations on worktrees (TUI)
 - **Toast notifications** — non-blocking operation feedback (TUI)
-- **Shell completions** — tab completion for bash/zsh/fish (`omw shell-init --completions`)
-- **Config profiles** — switch between configuration sets (`omw config --profiles`)
-- **Tmux sessions** — auto-create/kill tmux sessions per worktree with layout templates (`omw session`)
+- **Shell completions** — tab completion for bash/zsh/fish (`oml shell-init --completions`)
+- **Config profiles** — switch between configuration sets (`oml config --profiles`)
+- **Tmux sessions** — auto-create/kill tmux sessions per worktree with layout templates (`oml session`)
 - **Workspaces** — auto-discover git repos under parent directories with per-workspace defaults (`workspaces` config)
-- **AI agent init** — create config by default or install omw skill for Claude Code, Codex, OpenCode (`omw init`, `omw init --skill`)
+- **AI agent init** — create config by default or install oml skill for Claude Code, Codex, OpenCode (`oml init`, `oml init --skill`)
 
 ## Requirements
 
@@ -48,28 +48,28 @@ Manage git worktrees with ease. Create, switch, and clean up worktrees with conf
 - git 2.17+
 - macOS or Linux
 - [gh CLI](https://cli.github.com) (optional, for `--pr` flag)
-- [tmux](https://github.com/tmux/tmux) (optional, for `omw session`)
+- [tmux](https://github.com/tmux/tmux) (optional, for `oml session`)
 
 ## Installation
 
 ### Homebrew (macOS/Linux)
 
 ```bash
-brew install getsolaris/tap/oh-my-worktree
+brew install getsolaris/tap/oh-my-lemontree
 ```
 
 ### curl (one-liner)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/getsolaris/oh-my-worktree/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/getsolaris/oh-my-lemontree/main/install.sh | bash
 ```
 
 ### npm / bun
 
 ```bash
-bun install -g @getsolaris/oh-my-worktree
+bun install -g oh-my-lemontree
 # or
-npm install -g @getsolaris/oh-my-worktree
+npm install -g oh-my-lemontree
 ```
 
 ## Local Development
@@ -91,75 +91,75 @@ Prefer targeted tests first when you change covered code, then run the full chec
 
 ```bash
 # Launch TUI
-omw
+oml
 
 # List worktrees
-omw list
+oml list
 
 # Create a new worktree
-omw add feature/my-feature
+oml add feature/my-feature
 
 # Create with monorepo focus
-omw add feature/my-feature --focus apps/web,apps/api
+oml add feature/my-feature --focus apps/web,apps/api
 
 # Create from a GitHub PR
-omw add --pr 123
+oml add --pr 123
 
 # Use a template
-omw add feature/login --template review
+oml add feature/login --template review
 
 # Pin a worktree to protect from cleanup
-omw pin feature/important --reason "active sprint"
+oml pin feature/important --reason "active sprint"
 
 # View activity log
-omw log
+oml log
 
 # Archive worktree changes before removing
-omw archive feature/done --yes
+oml archive feature/done --yes
 
 # Rename a worktree branch
-omw rename old-name new-name
+oml rename old-name new-name
 
-# Clone and initialize omw
-omw clone https://github.com/user/repo.git
+# Clone and initialize oml
+oml clone https://github.com/user/repo.git
 
 # Import an existing worktree
-omw import /path/to/worktree
+oml import /path/to/worktree
 
 # Open/attach tmux session for a worktree
-omw session feature/my-feature
+oml session feature/my-feature
 
 # Create worktree with tmux session
-omw add feature/new --session
+oml add feature/new --session
 
 # Run command across all worktrees
-omw exec "bun test"
+oml exec "bun test"
 
 # Compare two worktrees
-omw diff feature/a feature/b --stat
+oml diff feature/a feature/b --stat
 
 # Check worktree health
-omw doctor
+oml doctor
 
 # Switch to a worktree (requires shell integration)
-omw switch feature/my-feature
+oml switch feature/my-feature
 
 # Remove a worktree
-omw remove feature/my-feature --yes
+oml remove feature/my-feature --yes
 
 # Clean up merged worktrees
-omw clean --dry-run
+oml clean --dry-run
 
 # Initialize config file
-omw init
+oml init
 
 # Generate AI agent skill file
-omw init --skill claude-code
+oml init --skill claude-code
 ```
 
 ## TUI Usage
 
-Launch with `omw` (no arguments).
+Launch with `oml` (no arguments).
 
 ### Keyboard Shortcuts
 
@@ -231,7 +231,7 @@ Press `r` to recheck, `Esc` to go back.
 
 ### Config View
 
-Open with `Ctrl+P` → `Open Config`. The Config tab renders the full contents of `~/.config/oh-my-worktree/config.json`, including:
+Open with `Ctrl+P` → `Open Config`. The Config tab renders the full contents of `~/.config/oh-my-lemontree/config.json`, including:
 
 - Top-level: `version`, `theme`, `activeProfile`
 - `defaults` (including `postRemove`, `autoUpstream`, `sharedDeps`)
@@ -270,56 +270,56 @@ Every commit runs `validateConfig` before writing. Invalid input surfaces as an 
 
 | Command                  | Description                          |
 | ------------------------ | ------------------------------------ |
-| `omw`                    | Launch TUI                           |
-| `omw list`               | List all worktrees (with focus info) |
-| `omw add <branch>`       | Create worktree                      |
-| `omw remove <branch>`    | Remove worktree                      |
-| `omw switch <branch>`    | Switch to worktree                   |
-| `omw clean`              | Remove merged worktrees              |
-| `omw doctor`             | Check worktree health                |
-| `omw config`             | Manage configuration                 |
-| `omw exec <command>`     | Run command in each worktree         |
-| `omw diff <ref1> [ref2]` | Diff between worktrees/branches      |
-| `omw pin <branch>`       | Pin/unpin worktree (protect from cleanup) |
-| `omw log`                | Show worktree activity log           |
-| `omw archive <branch>`   | Archive changes and optionally remove |
-| `omw rename <old> <new>` | Rename worktree branch               |
-| `omw clone <url>`        | Clone repo and initialize omw        |
-| `omw import <path>`      | Adopt worktree with omw metadata     |
-| `omw session [branch]`   | Manage tmux sessions for worktrees   |
-| `omw open [branch]`      | Open a worktree in your editor (focus-aware) |
-| `omw init`               | Initialize config or install AI agent skills |
+| `oml`                    | Launch TUI                           |
+| `oml list`               | List all worktrees (with focus info) |
+| `oml add <branch>`       | Create worktree                      |
+| `oml remove <branch>`    | Remove worktree                      |
+| `oml switch <branch>`    | Switch to worktree                   |
+| `oml clean`              | Remove merged worktrees              |
+| `oml doctor`             | Check worktree health                |
+| `oml config`             | Manage configuration                 |
+| `oml exec <command>`     | Run command in each worktree         |
+| `oml diff <ref1> [ref2]` | Diff between worktrees/branches      |
+| `oml pin <branch>`       | Pin/unpin worktree (protect from cleanup) |
+| `oml log`                | Show worktree activity log           |
+| `oml archive <branch>`   | Archive changes and optionally remove |
+| `oml rename <old> <new>` | Rename worktree branch               |
+| `oml clone <url>`        | Clone repo and initialize oml        |
+| `oml import <path>`      | Adopt worktree with oml metadata     |
+| `oml session [branch]`   | Manage tmux sessions for worktrees   |
+| `oml open [branch]`      | Open a worktree in your editor (focus-aware) |
+| `oml init`               | Initialize config or install AI agent skills |
 
-### `omw add`
+### `oml add`
 
 ```bash
-omw add feature/login                        # Create branch if needed + worktree
-omw add feature/login --base main            # New branches start from main
-omw add existing-branch                      # Worktree for existing branch
+oml add feature/login                        # Create branch if needed + worktree
+oml add feature/login --base main            # New branches start from main
+oml add existing-branch                      # Worktree for existing branch
 
 # Monorepo: create with focus packages
-omw add feature/login --focus apps/web,apps/api
-omw add feature/login --focus apps/web --focus apps/api
+oml add feature/login --focus apps/web,apps/api
+oml add feature/login --focus apps/web --focus apps/api
 
 # Use a template
-omw add feature/login --template review
+oml add feature/login --template review
 
 # Create from a GitHub PR (requires gh CLI)
-omw add --pr 123
-omw add --pr 456 --template review
+oml add --pr 123
+oml add --pr 456 --template review
 ```
 
-### `omw doctor`
+### `oml doctor`
 
 ```bash
-omw doctor              # Human-readable output
-omw doctor --json       # JSON output for scripting
+oml doctor              # Human-readable output
+oml doctor --json       # JSON output for scripting
 ```
 
 Exit code: `0` if healthy, `1` if any warnings or errors.
 
 ```
-oh-my-worktree doctor
+oh-my-lemontree doctor
 
 ✓ Git version: 2.39.0 (>= 2.17 required)
 ✓ Configuration: valid
@@ -331,43 +331,43 @@ oh-my-worktree doctor
 All checks passed.
 ```
 
-### `omw list`
+### `oml list`
 
 ```bash
-omw list                # Table with Focus column
-omw list --json         # JSON with focus array
-omw list --porcelain    # Machine-readable
+oml list                # Table with Focus column
+oml list --json         # JSON with focus array
+oml list --porcelain    # Machine-readable
 ```
 
 Output includes a `Focus` column showing monorepo focus paths per worktree.
 
-### `omw remove`
+### `oml remove`
 
 ```bash
-omw remove feature/login               # Remove by branch name
-omw remove feature/login --force        # Force remove (dirty worktree)
-omw remove feature/login --yes          # Skip confirmation
+oml remove feature/login               # Remove by branch name
+oml remove feature/login --force        # Force remove (dirty worktree)
+oml remove feature/login --yes          # Skip confirmation
 ```
 
-### `omw clean`
+### `oml clean`
 
 ```bash
-omw clean --dry-run    # Preview what would be removed
-omw clean              # Remove all merged worktrees
-omw clean --stale      # Also show stale worktrees (uses lifecycle config)
+oml clean --dry-run    # Preview what would be removed
+oml clean              # Remove all merged worktrees
+oml clean --stale      # Also show stale worktrees (uses lifecycle config)
 ```
 
-### `omw exec`
+### `oml exec`
 
 Run a shell command in every non-main worktree.
 
 ```bash
-omw exec "bun test"                   # Run in all worktrees (sequential)
-omw exec "bun test" --parallel        # Run in parallel
-omw exec "git pull" --all             # Across all configured repos
-omw exec "bun install" --dirty        # Only dirty worktrees
-omw exec "git rebase main" --behind   # Only worktrees behind upstream
-omw exec "bun test" --json            # JSON output
+oml exec "bun test"                   # Run in all worktrees (sequential)
+oml exec "bun test" --parallel        # Run in parallel
+oml exec "git pull" --all             # Across all configured repos
+oml exec "bun install" --dirty        # Only dirty worktrees
+oml exec "git rebase main" --behind   # Only worktrees behind upstream
+oml exec "bun test" --json            # JSON output
 ```
 
 | Flag                | Description                           |
@@ -379,116 +379,116 @@ omw exec "bun test" --json            # JSON output
 | `--behind`          | Only run in worktrees behind upstream |
 | `--json` / `-j`     | Output results as JSON                |
 
-Environment variables available in commands: `OMW_BRANCH`, `OMW_WORKTREE_PATH`, `OMW_REPO_PATH`.
+Environment variables available in commands: `OML_BRANCH`, `OML_WORKTREE_PATH`, `OML_REPO_PATH`.
 
-### `omw diff`
+### `oml diff`
 
 Show diff between two worktree branches.
 
 ```bash
-omw diff feature/a feature/b         # Full diff
-omw diff feature/a feature/b --stat  # Diffstat summary
-omw diff feature/a --name-only       # Changed file names only
-omw diff feature/a                   # Compare against current HEAD
+oml diff feature/a feature/b         # Full diff
+oml diff feature/a feature/b --stat  # Diffstat summary
+oml diff feature/a --name-only       # Changed file names only
+oml diff feature/a                   # Compare against current HEAD
 ```
 
-### `omw pin`
+### `oml pin`
 
 ```bash
-omw pin feature/auth --reason "active sprint"  # Pin with reason
-omw pin --list                                  # List pinned worktrees
-omw pin --list --json                           # JSON output
-omw unpin feature/auth                          # Unpin
+oml pin feature/auth --reason "active sprint"  # Pin with reason
+oml pin --list                                  # List pinned worktrees
+oml pin --list --json                           # JSON output
+oml unpin feature/auth                          # Unpin
 ```
 
-Pinned worktrees are excluded from `omw clean` and lifecycle auto-cleanup.
+Pinned worktrees are excluded from `oml clean` and lifecycle auto-cleanup.
 
-### `omw log`
+### `oml log`
 
 ```bash
-omw log                # Show last 20 events
-omw log --limit 50     # Show last 50 events
-omw log --json         # JSON output
-omw log --clear        # Clear activity log
+oml log                # Show last 20 events
+oml log --limit 50     # Show last 50 events
+oml log --json         # JSON output
+oml log --clear        # Clear activity log
 ```
 
 Events are color-coded: create (green), delete (red), switch (blue), rename (yellow), archive (magenta), import (cyan).
 
-### `omw archive`
+### `oml archive`
 
 ```bash
-omw archive feature/done --yes       # Archive and remove
-omw archive feature/wip --keep       # Archive without removing
-omw archive --list                   # List all archives
-omw archive --list --json            # JSON output
+oml archive feature/done --yes       # Archive and remove
+oml archive feature/wip --keep       # Archive without removing
+oml archive --list                   # List all archives
+oml archive --list --json            # JSON output
 ```
 
-Archives are stored as patch files in `~/.omw/archives/`.
+Archives are stored as patch files in `~/.oml/archives/`.
 
-### `omw rename`
+### `oml rename`
 
 ```bash
-omw rename old-branch new-branch             # Rename branch
-omw rename old-branch new-branch --move-path # Also move worktree directory
+oml rename old-branch new-branch             # Rename branch
+oml rename old-branch new-branch --move-path # Also move worktree directory
 ```
 
-### `omw clone`
+### `oml clone`
 
 ```bash
-omw clone https://github.com/user/repo.git              # Clone and init
-omw clone https://github.com/user/repo.git ./my-dir     # Custom target path
-omw clone https://github.com/user/repo.git --template review # Apply template
-omw clone https://github.com/user/repo.git --no-init-config  # Skip config init
+oml clone https://github.com/user/repo.git              # Clone and init
+oml clone https://github.com/user/repo.git ./my-dir     # Custom target path
+oml clone https://github.com/user/repo.git --template review # Apply template
+oml clone https://github.com/user/repo.git --no-init-config  # Skip config init
 ```
 
-### `omw import`
+### `oml import`
 
 ```bash
-omw import /path/to/worktree                           # Adopt worktree
-omw import /path/to/worktree --focus apps/web,apps/api # With focus
-omw import /path/to/worktree --pin                     # Pin immediately
+oml import /path/to/worktree                           # Adopt worktree
+oml import /path/to/worktree --focus apps/web,apps/api # With focus
+oml import /path/to/worktree --pin                     # Pin immediately
 ```
 
-### `omw session`
+### `oml session`
 
 Manage tmux sessions for worktrees. Requires tmux.
 
 ```bash
-omw session feature/auth              # Open/attach session (create if needed)
-omw session feature/auth --layout api # Use named layout from config
-omw session --list                    # List active omw sessions
-omw session --list --json             # JSON output
-omw session feature/auth --kill       # Kill session for worktree
-omw session --kill-all                # Kill all omw sessions
+oml session feature/auth              # Open/attach session (create if needed)
+oml session feature/auth --layout api # Use named layout from config
+oml session --list                    # List active oml sessions
+oml session --list --json             # JSON output
+oml session feature/auth --kill       # Kill session for worktree
+oml session --kill-all                # Kill all oml sessions
 ```
 
 Sessions are auto-created/killed when `sessions.autoCreate` / `sessions.autoKill` are enabled in config.
 
 ```bash
 # Create worktree with tmux session
-omw add feature/login --session
-omw add feature/login --session --layout api
+oml add feature/login --session
+oml add feature/login --session --layout api
 ```
 
-When `sessions.enabled` is `true` and you're inside tmux, `omw switch` automatically switches to the target worktree's tmux session.
+When `sessions.enabled` is `true` and you're inside tmux, `oml switch` automatically switches to the target worktree's tmux session.
 
-### `omw open`
+### `oml open`
 
 Open a worktree in your editor or IDE. Auto-detects `$VISUAL` / `$EDITOR` and falls back to a known list (`code`, `cursor`, `vim`, `nvim`, `emacs`, `nano`, `subl`, `zed`, `idea`, `webstorm`).
 
 ```bash
-omw open                              # Open the current worktree
-omw open feature/auth                 # Open a specific worktree
-omw open feature/auth -e nvim         # Override editor
+oml open                              # Open the current worktree
+oml open feature/auth                 # Open a specific worktree
+oml open feature/auth -e nvim         # Override editor
 
 # Focus-aware behavior (when the worktree was created with --focus)
-omw open feature/auth                 # 1 focus path → opens that focus
+oml open feature/auth                 # 1 focus path → opens that focus
                                       # 2+ focus paths → errors with hint
-omw open feature/auth --focus apps/web   # Pick a specific focus path
-omw open feature/auth -f apps/api        # Same with the short alias
-omw open feature/auth --root             # Force the worktree root, ignore focus
+oml open feature/auth --focus apps/web   # Pick a specific focus path
+oml open feature/auth -f apps/api        # Same with the short alias
+oml open feature/auth --root             # Force the worktree root, ignore focus
 
-omw open --list-editors               # List detected editors
+oml open --list-editors               # List detected editors
 ```
 
 | Flag | Alias | Description |
@@ -504,22 +504,22 @@ omw open --list-editors               # List detected editors
 - 1 focus path set → opens `<worktree>/<focus>` automatically.
 - 2+ focus paths set → errors out and asks for `--focus <path>` or `--root` (the TUI shows an interactive picker instead).
 
-### `omw init`
+### `oml init`
 
-Initialize omw config by default, or install omw skill for AI coding agents so they can use omw commands.
+Initialize oml config by default, or install oml skill for AI coding agents so they can use oml commands.
 
 ```bash
-omw init                         # → ~/.config/oh-my-worktree/config.json
-omw init --skill claude-code   # → ~/.claude/skills/omw/
-omw init --skill codex          # → ~/.agents/skills/omw/
-omw init --skill opencode       # → ~/.config/opencode/skill/omw/
+oml init                         # → ~/.config/oh-my-lemontree/config.json
+oml init --skill claude-code   # → ~/.claude/skills/oml/
+oml init --skill codex          # → ~/.agents/skills/oml/
+oml init --skill opencode       # → ~/.config/opencode/skill/oml/
 ```
 
 | Platform | Skill Path |
 |----------|-----------|
-| `claude-code` | `~/.claude/skills/omw/` |
-| `codex` | `~/.agents/skills/omw/` |
-| `opencode` | `~/.config/opencode/skill/omw/` |
+| `claude-code` | `~/.claude/skills/oml/` |
+| `codex` | `~/.agents/skills/oml/` |
+| `opencode` | `~/.config/opencode/skill/oml/` |
 
 Each skill directory contains:
 - `SKILL.md` — overview and common workflows
@@ -530,29 +530,29 @@ The command is idempotent — running it again updates the skill directory.
 
 #### Auto-init on first run
 
-You don't have to run `omw init` manually. The first time you run any `omw` command (including launching the TUI), if `~/.config/oh-my-worktree/config.json` does not exist, omw creates it with the default template and prints a one-line notice to stderr:
+You don't have to run `oml init` manually. The first time you run any `oml` command (including launching the TUI), if `~/.config/oh-my-lemontree/config.json` does not exist, oml creates it with the default template and prints a one-line notice to stderr:
 
 ```
-omw: created default config at /Users/you/.config/oh-my-worktree/config.json
+oml: created default config at /Users/you/.config/oh-my-lemontree/config.json
 ```
 
-The notice is suppressed when stdout is not a TTY (so pipes, scripts, and CI stay quiet) and when you run `omw init` explicitly (to avoid duplicate messages with init's own success line). Auto-init is fully idempotent — subsequent runs do nothing.
+The notice is suppressed when stdout is not a TTY (so pipes, scripts, and CI stay quiet) and when you run `oml init` explicitly (to avoid duplicate messages with init's own success line). Auto-init is fully idempotent — subsequent runs do nothing.
 
 ## Configuration
 
-Config file: `~/.config/oh-my-worktree/config.json`
+Config file: `~/.config/oh-my-lemontree/config.json`
 
-Initialize with: `omw config --init` (or just run any `omw` command — see [Auto-init on first run](#auto-init-on-first-run))
+Initialize with: `oml config --init` (or just run any `oml` command — see [Auto-init on first run](#auto-init-on-first-run))
 
 ### Full Example
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/getsolaris/oh-my-worktree/main/schema.json",
+  "$schema": "https://raw.githubusercontent.com/getsolaris/oh-my-lemontree/main/schema.json",
   "version": 1,
   "theme": "dracula",
   "defaults": {
-    "worktreeDir": "~/.omw/worktrees/{repo}-{branch}",
+    "worktreeDir": "~/.oml/worktrees/{repo}-{branch}",
     "copyFiles": [".env"],
     "linkFiles": ["node_modules"],
     "postCreate": ["bun install"],
@@ -588,7 +588,7 @@ Initialize with: `omw config --init` (or just run any `omw` command — see [Aut
     "enabled": true,
     "autoCreate": false,
     "autoKill": true,
-    "prefix": "omw",
+    "prefix": "oml",
     "defaultLayout": "dev",
     "layouts": {
       "dev": {
@@ -664,7 +664,7 @@ All repos inherit these unless overridden.
 
 | Field         | Type       | Default                            | Description                             |
 | ------------- | ---------- | ---------------------------------- | --------------------------------------- |
-| `worktreeDir` | `string`   | `~/.omw/worktrees/{repo}-{branch}` | Worktree directory pattern              |
+| `worktreeDir` | `string`   | `~/.oml/worktrees/{repo}-{branch}` | Worktree directory pattern              |
 | `copyFiles`   | `string[]` | `[]`                               | Files to copy from main repo            |
 | `linkFiles`   | `string[]` | `[]`                               | Files/dirs to symlink (saves disk)      |
 | `postCreate`  | `string[]` | `[]`                               | Commands to run after worktree creation |
@@ -809,13 +809,13 @@ Named presets for worktree creation. Each template can override any default fiel
 | `autoUpstream` | `boolean`  | Override upstream tracking         |
 | `base`         | `string`   | Default base branch for newly created branches |
 
-Usage: `omw add feature/login --template review`
+Usage: `oml add feature/login --template review`
 
 Template values override the resolved repo config. The `base` field sets a default for `--base` if not explicitly provided.
 
 #### `lifecycle`
 
-Automatic worktree lifecycle management. Used by `omw clean --stale`.
+Automatic worktree lifecycle management. Used by `oml clean --stale`.
 
 ```json
 {
@@ -838,9 +838,9 @@ Automatic worktree lifecycle management. Used by `omw clean --stale`.
 Switch between different configuration sets.
 
 ```bash
-omw config --profiles                    # List profiles
-omw config --profile work --activate     # Activate profile
-omw config --profile personal --delete   # Delete profile
+oml config --profiles                    # List profiles
+oml config --profile work --activate     # Activate profile
+oml config --profile personal --delete   # Delete profile
 ```
 
 #### `sessions`
@@ -853,7 +853,7 @@ Tmux session management for worktrees.
     "enabled": true,
     "autoCreate": true,
     "autoKill": true,
-    "prefix": "omw",
+    "prefix": "oml",
     "defaultLayout": "dev",
     "layouts": {
       "dev": {
@@ -871,9 +871,9 @@ Tmux session management for worktrees.
 | Field           | Type      | Default | Description                                        |
 | --------------- | --------- | ------- | -------------------------------------------------- |
 | `enabled`       | `boolean` | `false` | Enable session integration (auto-switch in tmux)   |
-| `autoCreate`    | `boolean` | `false` | Auto-create tmux session on `omw add`              |
-| `autoKill`      | `boolean` | `false` | Auto-kill tmux session on `omw remove`             |
-| `prefix`        | `string`  | `"omw"` | Prefix for tmux session names                      |
+| `autoCreate`    | `boolean` | `false` | Auto-create tmux session on `oml add`              |
+| `autoKill`      | `boolean` | `false` | Auto-kill tmux session on `oml remove`             |
+| `prefix`        | `string`  | `"oml"` | Prefix for tmux session names                      |
 | `defaultLayout` | `string`  | —       | Default layout name for new sessions               |
 | `layouts`       | `object`  | `{}`    | Named layouts with window definitions              |
 
@@ -884,7 +884,7 @@ Tmux session management for worktrees.
 | `name`    | `string` | Yes      | Window name                    |
 | `command` | `string` | No       | Command to run in the window   |
 
-Session naming: branch `feat/auth-token` → tmux session `omw_feat-auth-token`.
+Session naming: branch `feat/auth-token` → tmux session `oml_feat-auth-token`.
 
 #### `sharedDeps`
 
@@ -919,12 +919,12 @@ Share dependencies between main repo and worktrees to save disk space. Can be se
 Track which monorepo packages a worktree is working on.
 
 ```bash
-omw add feature/login --focus apps/web,apps/api
+oml add feature/login --focus apps/web,apps/api
 ```
 
 - Supports comma-separated, space-separated, or multiple `--focus` flags
 - Focus metadata is stored in git internals (not in the worktree root)
-- `omw list` shows focus paths per worktree
+- `oml list` shows focus paths per worktree
 - Monorepo hooks only fire for matching focus paths
 - Focus is optional — omitting it creates a normal worktree
 
@@ -961,41 +961,41 @@ Available: `opencode`, `tokyo-night`, `dracula`, `nord`, `catppuccin`, `github-d
 
 ## Shell Integration
 
-Use `omw shell-init` to install shell integration for `omw switch`.
+Use `oml shell-init` to install shell integration for `oml switch`.
 
 ### Completions
 
 ```bash
 # Add completions (bash)
-eval "$(omw shell-init --completions bash)"
+eval "$(oml shell-init --completions bash)"
 
 # Add completions (zsh)
-eval "$(omw shell-init --completions zsh)"
+eval "$(oml shell-init --completions zsh)"
 
 # Add completions (fish)
-omw shell-init --completions fish | source
+oml shell-init --completions fish | source
 ```
 
 ### Examples
 
 ```bash
 # zsh
-echo 'eval "$(omw shell-init zsh)"' >> ~/.zshrc
+echo 'eval "$(oml shell-init zsh)"' >> ~/.zshrc
 source ~/.zshrc
 
 # bash
-echo 'eval "$(omw shell-init bash)"' >> ~/.bashrc
+echo 'eval "$(oml shell-init bash)"' >> ~/.bashrc
 source ~/.bashrc
 
 # fish
-omw shell-init fish >> ~/.config/fish/config.fish
+oml shell-init fish >> ~/.config/fish/config.fish
 source ~/.config/fish/config.fish
 ```
 
 You can also preview the generated wrapper before saving it:
 
 ```bash
-omw shell-init zsh
+oml shell-init zsh
 ```
 
 ## License

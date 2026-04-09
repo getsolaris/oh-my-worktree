@@ -30,7 +30,7 @@ export interface TmuxSessionStatus {
   created: string;
 }
 
-const SESSION_PREFIX = "omw";
+const SESSION_PREFIX = "oml";
 
 function sanitizeSessionPart(value: string): string {
   return value.replace(/\//g, "-").replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -82,7 +82,7 @@ export function fromSessionName(sessionName: string, prefix?: string): string | 
 }
 
 function getSessionMetaPath(worktreePath: string): string {
-  return getMetadataFilePath(worktreePath, "omw-session");
+  return getMetadataFilePath(worktreePath, "oml-session");
 }
 
 export function writeSessionMeta(worktreePath: string, info: SessionInfo): void {

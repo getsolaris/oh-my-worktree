@@ -21,11 +21,11 @@ export function getSkillDir(platform: SkillPlatform): string {
   const home = process.env.HOME || process.env.USERPROFILE || "~";
   switch (platform) {
     case "claude-code":
-      return join(home, ".claude", "skills", "omw");
+      return join(home, ".claude", "skills", "oml");
     case "codex":
-      return join(home, ".agents", "skills", "omw");
+      return join(home, ".agents", "skills", "oml");
     case "opencode":
-      return join(home, ".config", "opencode", "skill", "omw");
+      return join(home, ".config", "opencode", "skill", "oml");
   }
 }
 
@@ -73,20 +73,20 @@ const commandOverview: CommandOverview[] = [
   { command: "log", aliases: "logs", description: "Read or clear the activity log." },
   { command: "archive", aliases: "-", description: "Archive worktree changes as patch files." },
   { command: "rename", aliases: "-", description: "Rename a worktree branch and optionally move its path." },
-  { command: "clone", aliases: "-", description: "Clone a repository and initialize omw setup." },
-  { command: "import", aliases: "-", description: "Import an existing worktree into omw metadata." },
+  { command: "clone", aliases: "-", description: "Clone a repository and initialize oml setup." },
+  { command: "import", aliases: "-", description: "Import an existing worktree into oml metadata." },
   { command: "session", aliases: "ss", description: "Manage tmux sessions for worktrees." },
   { command: "config", aliases: "-", description: "Initialize, inspect, validate, and manage config profiles." },
   { command: "open", aliases: "-", description: "Open a worktree path in your preferred editor." },
   { command: "shell-init", aliases: "-", description: "Generate shell integration and completions." },
-  { command: "init", aliases: "-", description: "Initialize config or install/update omw AI agent skill files." },
+  { command: "init", aliases: "-", description: "Initialize config or install/update oml AI agent skill files." },
 ];
 
 const referenceSpecs: ReferenceSpec[] = [
   {
     command: "add",
     summary: "Create a new worktree from a branch, template, or GitHub PR.",
-    synopsis: "omw add [branch] [path]",
+    synopsis: "oml add [branch] [path]",
     options: [
       { flag: "--create", type: "boolean", alias: "-c", description: "Optional compatibility flag; missing branches are created automatically" },
       { flag: "--base", type: "string", alias: "-b", description: "Base branch/commit for new branch" },
@@ -97,8 +97,8 @@ const referenceSpecs: ReferenceSpec[] = [
       { flag: "--layout", type: "string", alias: "-", description: "Session layout name from config" },
     ],
     examples: [
-      ["Create a feature branch worktree", "omw add feature/auth --base main"],
-      ["Create from PR with session layout", "omw add feature/review --pr 123 --session --layout dev"],
+      ["Create a feature branch worktree", "oml add feature/auth --base main"],
+      ["Create from PR with session layout", "oml add feature/review --pr 123 --session --layout dev"],
     ],
     notes: [
       "Creates the branch automatically when it does not already exist.",
@@ -123,14 +123,14 @@ const referenceSpecs: ReferenceSpec[] = [
   {
     command: "remove",
     summary: "Remove a worktree by branch name or path.",
-    synopsis: "omw remove <branch-or-path>",
+    synopsis: "oml remove <branch-or-path>",
     options: [
       { flag: "--force", type: "boolean", alias: "-f", description: "Force removal even with uncommitted changes" },
       { flag: "--yes", type: "boolean", alias: "-y", description: "Skip confirmation prompt" },
     ],
     examples: [
-      ["Remove a branch worktree", "omw remove feature/auth"],
-      ["Force remove without prompt", "omw remove feature/auth --force --yes"],
+      ["Remove a branch worktree", "oml remove feature/auth"],
+      ["Force remove without prompt", "oml remove feature/auth --force --yes"],
     ],
     notes: [
       "Runs postRemove hooks and monorepo postRemove hooks before removal.",
@@ -146,15 +146,15 @@ const referenceSpecs: ReferenceSpec[] = [
   {
     command: "list",
     summary: "List worktrees with branch, path, status, and focus details.",
-    synopsis: "omw list",
+    synopsis: "oml list",
     options: [
       { flag: "--json", type: "boolean", alias: "-j", description: "Output as JSON" },
       { flag: "--porcelain", type: "boolean", alias: "-p", description: "Machine-readable output" },
       { flag: "--all", type: "boolean", alias: "-a", description: "List worktrees from all configured repos" },
     ],
     examples: [
-      ["Show all worktrees", "omw list"],
-      ["Get machine-readable output", "omw list --porcelain"],
+      ["Show all worktrees", "oml list"],
+      ["Get machine-readable output", "oml list --porcelain"],
     ],
     notes: [
       "Shows branch, path, status (clean/dirty/locked), focus paths.",
@@ -169,15 +169,15 @@ const referenceSpecs: ReferenceSpec[] = [
   {
     command: "switch",
     summary: "Switch shell context to a worktree by branch or path.",
-    synopsis: "omw switch <branch-or-path>",
+    synopsis: "oml switch <branch-or-path>",
     options: [],
     examples: [
-      ["Switch using branch name", "omw switch feature/auth"],
-      ["Switch using path", "omw switch ~/.omw/worktrees/repo-feature-auth"],
+      ["Switch using branch name", "oml switch feature/auth"],
+      ["Switch using path", "oml switch ~/.oml/worktrees/repo-feature-auth"],
     ],
     notes: [
       "Outputs cd command for shell eval.",
-      "Requires shell integration (omw shell-init).",
+      "Requires shell integration (oml shell-init).",
       "Auto-switches tmux session if sessions.enabled and inside tmux.",
       "Logs switch activity.",
     ],
@@ -189,14 +189,14 @@ const referenceSpecs: ReferenceSpec[] = [
   {
     command: "status",
     summary: "Show branch health, sync state, commit info, and focus.",
-    synopsis: "omw status",
+    synopsis: "oml status",
     options: [
       { flag: "--json", type: "boolean", alias: "-j", description: "Output as JSON" },
       { flag: "--all", type: "boolean", alias: "-a", description: "Show worktrees from all configured repos" },
     ],
     examples: [
-      ["Print status table", "omw status"],
-      ["Parse status in scripts", "omw status --json"],
+      ["Print status table", "oml status"],
+      ["Parse status in scripts", "oml status --json"],
     ],
     notes: [
       "Shows branch, dirty count, sync status (ahead/behind), last commit info, focus paths.",
@@ -211,15 +211,15 @@ const referenceSpecs: ReferenceSpec[] = [
   {
     command: "clean",
     summary: "Remove merged worktrees and optionally inspect stale candidates.",
-    synopsis: "omw clean",
+    synopsis: "oml clean",
     options: [
       { flag: "--dry-run", type: "boolean", alias: "-n", description: "Show what would be removed" },
       { flag: "--yes", type: "boolean", alias: "-y", description: "Skip confirmation" },
       { flag: "--stale", type: "boolean", alias: "-", description: "Also show stale worktrees based on lifecycle config" },
     ],
     examples: [
-      ["Preview merged cleanup", "omw clean --dry-run"],
-      ["Run cleanup without prompts", "omw clean --yes"],
+      ["Preview merged cleanup", "oml clean --dry-run"],
+      ["Run cleanup without prompts", "oml clean --yes"],
     ],
     notes: [
       "Only removes merged worktrees.",
@@ -236,14 +236,14 @@ const referenceSpecs: ReferenceSpec[] = [
   {
     command: "doctor",
     summary: "Run health checks for worktree state and configuration.",
-    synopsis: "omw doctor",
+    synopsis: "oml doctor",
     options: [
       { flag: "--json", type: "boolean", alias: "-j", description: "Output as JSON" },
       { flag: "--fix", type: "boolean", alias: "-", description: "Auto-fix issues" },
     ],
     examples: [
-      ["Run health checks", "omw doctor"],
-      ["Auto-fix detectable issues", "omw doctor --fix"],
+      ["Run health checks", "oml doctor"],
+      ["Auto-fix detectable issues", "oml doctor --fix"],
     ],
     notes: [
       "Checks: git version (>=2.17), config validity, stale worktrees, orphaned directories, lock status, dirty worktrees.",
@@ -255,7 +255,7 @@ const referenceSpecs: ReferenceSpec[] = [
   {
     command: "exec",
     summary: "Run a shell command across filtered non-main worktrees.",
-    synopsis: "omw exec <command>",
+    synopsis: "oml exec <command>",
     options: [
       { flag: "--all", type: "boolean", alias: "-a", description: "Run across all configured repos" },
       { flag: "--dirty", type: "boolean", alias: "-", description: "Only run in dirty worktrees" },
@@ -265,12 +265,12 @@ const referenceSpecs: ReferenceSpec[] = [
       { flag: "--json", type: "boolean", alias: "-j", description: "Output results as JSON" },
     ],
     examples: [
-      ["Run tests in parallel", 'omw exec "bun test" --parallel'],
-      ["Pull only behind worktrees", 'omw exec "git pull" --behind'],
+      ["Run tests in parallel", 'oml exec "bun test" --parallel'],
+      ["Pull only behind worktrees", 'oml exec "git pull" --behind'],
     ],
     notes: [
       "Runs in non-main worktrees only.",
-      "Sets env vars: OMW_BRANCH, OMW_WORKTREE_PATH, OMW_REPO_PATH.",
+      "Sets env vars: OML_BRANCH, OML_WORKTREE_PATH, OML_REPO_PATH.",
       "Exit code 1 if any command fails.",
       "--all also includes repos auto-discovered via the `workspaces` config.",
     ],
@@ -282,14 +282,14 @@ const referenceSpecs: ReferenceSpec[] = [
   {
     command: "diff",
     summary: "Diff two refs or worktree branches.",
-    synopsis: "omw diff <ref1> [ref2]",
+    synopsis: "oml diff <ref1> [ref2]",
     options: [
       { flag: "--stat", type: "boolean", alias: "-s", description: "Show diffstat summary only" },
       { flag: "--name-only", type: "boolean", alias: "-n", description: "Show only names of changed files" },
     ],
     examples: [
-      ["Show diffstat only", "omw diff feature/a feature/b --stat"],
-      ["List changed file names", "omw diff feature/a --name-only"],
+      ["Show diffstat only", "oml diff feature/a feature/b --stat"],
+      ["List changed file names", "oml diff feature/a --name-only"],
     ],
     notes: [
       "ref2 defaults to HEAD.",
@@ -300,7 +300,7 @@ const referenceSpecs: ReferenceSpec[] = [
   {
     command: "pin",
     summary: "Pin or unpin worktrees and inspect pin metadata.",
-    synopsis: "omw pin [branch]",
+    synopsis: "oml pin [branch]",
     options: [
       { flag: "--reason", type: "string", alias: "-", description: "Reason for pinning" },
       { flag: "--list", type: "boolean", alias: "-", description: "List pinned worktrees" },
@@ -308,12 +308,12 @@ const referenceSpecs: ReferenceSpec[] = [
       { flag: "--unpin", type: "boolean", alias: "-", description: "Unpin instead of pinning" },
     ],
     examples: [
-      ["Pin with a reason", 'omw pin feature/auth --reason "active sprint"'],
-      ["Unpin a branch", "omw pin feature/auth --unpin"],
+      ["Pin with a reason", 'oml pin feature/auth --reason "active sprint"'],
+      ["Unpin a branch", "oml pin feature/auth --unpin"],
     ],
     notes: [
-      "Pinned worktrees are excluded from omw clean.",
-      "Also invokable as omw unpin <branch>.",
+      "Pinned worktrees are excluded from oml clean.",
+      "Also invokable as oml unpin <branch>.",
       "Pin metadata stored in git internals.",
     ],
     configKeys: [],
@@ -321,15 +321,15 @@ const referenceSpecs: ReferenceSpec[] = [
   {
     command: "log",
     summary: "View or clear activity log events.",
-    synopsis: "omw log",
+    synopsis: "oml log",
     options: [
       { flag: "--limit", type: "number", alias: "-", description: "default 20, Show the last N entries" },
       { flag: "--json", type: "boolean", alias: "-j", description: "Output as JSON" },
       { flag: "--clear", type: "boolean", alias: "-", description: "Clear the activity log" },
     ],
     examples: [
-      ["Show recent entries", "omw log --limit 50"],
-      ["Clear the log", "omw log --clear"],
+      ["Show recent entries", "oml log --limit 50"],
+      ["Clear the log", "oml log --clear"],
     ],
     notes: [
       "Events: create (green), delete (red), switch (blue), rename (yellow), archive (magenta), import (cyan).",
@@ -340,7 +340,7 @@ const referenceSpecs: ReferenceSpec[] = [
   {
     command: "archive",
     summary: "Archive worktree changes as patch files before optional removal.",
-    synopsis: "omw archive [branch]",
+    synopsis: "oml archive [branch]",
     options: [
       { flag: "--yes", type: "boolean", alias: "-y", description: "Skip confirmation prompt" },
       { flag: "--keep", type: "boolean", alias: "-", description: "Archive without removing the worktree" },
@@ -348,11 +348,11 @@ const referenceSpecs: ReferenceSpec[] = [
       { flag: "--json", type: "boolean", alias: "-j", description: "Output as JSON with --list" },
     ],
     examples: [
-      ["Archive and remove", "omw archive feature/done --yes"],
-      ["List archive records", "omw archive --list --json"],
+      ["Archive and remove", "oml archive feature/done --yes"],
+      ["List archive records", "oml archive --list --json"],
     ],
     notes: [
-      "Archives stored as patch files in ~/.omw/archives/.",
+      "Archives stored as patch files in ~/.oml/archives/.",
       "Cannot archive main worktree.",
       "Runs postRemove hooks before removal unless --keep.",
     ],
@@ -361,13 +361,13 @@ const referenceSpecs: ReferenceSpec[] = [
   {
     command: "rename",
     summary: "Rename a worktree branch and optionally move its directory path.",
-    synopsis: "omw rename <old> <new>",
+    synopsis: "oml rename <old> <new>",
     options: [
       { flag: "--move-path", type: "boolean", alias: "-", description: "Also rename the worktree directory path" },
     ],
     examples: [
-      ["Rename a worktree branch", "omw rename feature/old feature/new"],
-      ["Rename branch and directory", "omw rename feature/old feature/new --move-path"],
+      ["Rename a worktree branch", "oml rename feature/old feature/new"],
+      ["Rename branch and directory", "oml rename feature/old feature/new --move-path"],
     ],
     notes: [
       "Cannot rename main worktree.",
@@ -379,15 +379,15 @@ const referenceSpecs: ReferenceSpec[] = [
   },
   {
     command: "clone",
-    summary: "Clone a repository and optionally apply omw template setup.",
-    synopsis: "omw clone <url> [path]",
+    summary: "Clone a repository and optionally apply oml template setup.",
+    synopsis: "oml clone <url> [path]",
     options: [
       { flag: "--template", type: "string", alias: "-t", description: "Apply a named template after cloning" },
-      { flag: "--init-config", type: "boolean", alias: "-", description: "default true, Initialize omw config after cloning" },
+      { flag: "--init-config", type: "boolean", alias: "-", description: "default true, Initialize oml config after cloning" },
     ],
     examples: [
-      ["Clone and initialize", "omw clone https://github.com/user/repo.git"],
-      ["Clone with template and no config init", "omw clone https://github.com/user/repo.git --template review --no-init-config"],
+      ["Clone and initialize", "oml clone https://github.com/user/repo.git"],
+      ["Clone with template and no config init", "oml clone https://github.com/user/repo.git --template review --no-init-config"],
     ],
     notes: [
       "Auto-detects target path from URL.",
@@ -398,15 +398,15 @@ const referenceSpecs: ReferenceSpec[] = [
   },
   {
     command: "import",
-    summary: "Import an existing git worktree into omw metadata.",
-    synopsis: "omw import <path>",
+    summary: "Import an existing git worktree into oml metadata.",
+    synopsis: "oml import <path>",
     options: [
       { flag: "--focus", type: "array", alias: "-f", description: "Focus packages for monorepo" },
       { flag: "--pin", type: "boolean", alias: "-", description: "Pin the worktree" },
     ],
     examples: [
-      ["Import a worktree path", "omw import /path/to/worktree"],
-      ["Import with focus and pin", "omw import /path/to/worktree --focus apps/web,apps/api --pin"],
+      ["Import a worktree path", "oml import /path/to/worktree"],
+      ["Import with focus and pin", "oml import /path/to/worktree --focus apps/web,apps/api --pin"],
     ],
     notes: [
       "Validates that path is a valid git worktree.",
@@ -418,21 +418,21 @@ const referenceSpecs: ReferenceSpec[] = [
   {
     command: "session",
     summary: "Manage tmux sessions for worktrees.",
-    synopsis: "omw session [branch-or-path]",
+    synopsis: "oml session [branch-or-path]",
     options: [
-      { flag: "--list", type: "boolean", alias: "-l", description: "List active omw tmux sessions" },
+      { flag: "--list", type: "boolean", alias: "-l", description: "List active oml tmux sessions" },
       { flag: "--kill", type: "boolean", alias: "-k", description: "Kill the session for the specified worktree" },
-      { flag: "--kill-all", type: "boolean", alias: "-", description: "Kill all omw tmux sessions" },
+      { flag: "--kill-all", type: "boolean", alias: "-", description: "Kill all oml tmux sessions" },
       { flag: "--layout", type: "string", alias: "-", description: "Use a named layout from config" },
       { flag: "--json", type: "boolean", alias: "-j", description: "Output in JSON format" },
     ],
     examples: [
-      ["Attach or create a session", "omw session feature/auth"],
-      ["List sessions as JSON", "omw session --list --json"],
+      ["Attach or create a session", "oml session feature/auth"],
+      ["List sessions as JSON", "oml session --list --json"],
     ],
     notes: [
       "Requires tmux.",
-      "Session naming: branch feat/auth-token → tmux session omw_feat-auth-token.",
+      "Session naming: branch feat/auth-token → tmux session oml_feat-auth-token.",
       "Supports layout templates with multiple windows.",
     ],
     configKeys: [
@@ -447,7 +447,7 @@ const referenceSpecs: ReferenceSpec[] = [
   {
     command: "config",
     summary: "Initialize, inspect, edit, validate, and manage profiles.",
-    synopsis: "omw config",
+    synopsis: "oml config",
     options: [
       { flag: "--init", type: "boolean", alias: "-", description: "Create default config file" },
       { flag: "--show", type: "boolean", alias: "-s", description: "Print current config as JSON" },
@@ -460,16 +460,16 @@ const referenceSpecs: ReferenceSpec[] = [
       { flag: "--delete", type: "boolean", alias: "-", description: "Delete the specified profile" },
     ],
     examples: [
-      ["Initialize config", "omw config --init"],
-      ["Activate a profile", "omw config --profile work --activate"],
+      ["Initialize config", "oml config --init"],
+      ["Activate a profile", "oml config --profile work --activate"],
     ],
-    notes: ["Config path: ~/.config/oh-my-worktree/config.json.", "XDG-compliant."],
+    notes: ["Config path: ~/.config/oh-my-lemontree/config.json.", "XDG-compliant."],
     configKeys: [],
   },
   {
     command: "open",
     summary: "Open the target or current worktree in an editor (focus-aware).",
-    synopsis: "omw open [branch-or-path]",
+    synopsis: "oml open [branch-or-path]",
     options: [
       { flag: "--editor", type: "string", alias: "-e", description: "Editor command to use" },
       { flag: "--focus", type: "string", alias: "-f", description: "Open a specific focus path (must match an existing focus entry)" },
@@ -477,10 +477,10 @@ const referenceSpecs: ReferenceSpec[] = [
       { flag: "--list-editors", type: "boolean", alias: "-", description: "List detected editors" },
     ],
     examples: [
-      ["Open current worktree", "omw open"],
-      ["Open with specific editor", "omw open feature/auth --editor nvim"],
-      ["Open a specific focus path", "omw open feature/auth --focus apps/web"],
-      ["Force open the worktree root", "omw open feature/auth --root"],
+      ["Open current worktree", "oml open"],
+      ["Open with specific editor", "oml open feature/auth --editor nvim"],
+      ["Open a specific focus path", "oml open feature/auth --focus apps/web"],
+      ["Force open the worktree root", "oml open feature/auth --root"],
     ],
     notes: [
       "Auto-detects editors: code, cursor, vim, nvim, emacs, nano, subl, zed, idea, webstorm.",
@@ -493,32 +493,32 @@ const referenceSpecs: ReferenceSpec[] = [
   {
     command: "shell-init",
     summary: "Generate shell integration wrappers and completions.",
-    synopsis: "omw shell-init [shell]",
+    synopsis: "oml shell-init [shell]",
     options: [
       { flag: "--completions", type: "string", alias: "-", description: "Generate shell completions: bash, zsh, fish" },
     ],
     examples: [
-      ["Generate shell wrapper", "omw shell-init zsh"],
-      ["Generate completion script", "omw shell-init --completions fish"],
+      ["Generate shell wrapper", "oml shell-init zsh"],
+      ["Generate completion script", "oml shell-init --completions fish"],
     ],
     notes: [
       "Shell arg is auto-detected if omitted.",
-      "Generates wrapper function for omw switch to work with shell cd.",
+      "Generates wrapper function for oml switch to work with shell cd.",
       "Supports bash, zsh, fish.",
     ],
     configKeys: [],
   },
   {
     command: "init",
-    summary: "Initialize omw config or install AI agent skill files.",
-    synopsis: "omw init",
+    summary: "Initialize oml config or install AI agent skill files.",
+    synopsis: "oml init",
     options: [
       { flag: "--skill", type: "string", alias: "-s", description: "Install AI agent skill: claude-code, codex, opencode" },
     ],
     examples: [
-      ["Initialize config", "omw init"],
-      ["Install Claude Code skill", "omw init --skill claude-code"],
-      ["Install Codex skill", "omw init --skill codex"],
+      ["Initialize config", "oml init"],
+      ["Install Claude Code skill", "oml init --skill claude-code"],
+      ["Install Codex skill", "oml init --skill codex"],
     ],
     notes: ["Without --skill, reuses config initialization and creates only config.json.", "With --skill, installs or updates SKILL.md + references/ directory.", "Idempotent — running again updates existing files without breaking existing setup."],
     configKeys: [],
@@ -538,82 +538,82 @@ function generateOptionsTable(options: OptionSpec[]): string {
 
 export function generateSkillContent(): string {
   const commandRows = commandOverview.map((entry) => `| \`${entry.command}\` | ${entry.aliases} | ${entry.description} |`);
-  const references = referenceSpecs.map((spec) => `- [\`omw ${spec.command}\`](references/${spec.command}.md)`);
+  const references = referenceSpecs.map((spec) => `- [\`oml ${spec.command}\`](references/${spec.command}.md)`);
 
   return [
     "---",
-    "name: omw",
+    "name: oml",
     `description: ${SKILL_DESCRIPTION}`,
     "metadata:",
     "  author: getsolaris",
     '  version: "1.0.0"',
     "---",
     "",
-    "# oh-my-worktree (omw)",
+    "# oh-my-lemontree (oml)",
     "",
     "## Quick Start",
     "",
     "### Create a feature worktree",
     "",
     "```bash",
-    "omw add feature/my-feature --base main",
+    "oml add feature/my-feature --base main",
     "```",
     "",
     "### List and check status",
     "",
     "```bash",
-    "omw list",
-    "omw status",
+    "oml list",
+    "oml status",
     "```",
     "",
     "### Clean up merged worktrees",
     "",
     "```bash",
-    "omw clean --dry-run",
-    "omw clean --yes",
+    "oml clean --dry-run",
+    "oml clean --yes",
     "```",
     "",
     "### Run commands across worktrees",
     "",
     "```bash",
-    'omw exec "bun test" --parallel',
+    'oml exec "bun test" --parallel',
     "```",
     "",
     "### Review a GitHub PR",
     "",
     "```bash",
-    "omw add pr-review --pr 42",
-    "omw open pr-review",
+    "oml add pr-review --pr 42",
+    "oml open pr-review",
     "```",
     "",
     "### Use templates",
     "",
     "```bash",
     "# Create worktree with predefined template (hooks, base branch, settings)",
-    "omw add feature/new --template frontend",
+    "oml add feature/new --template frontend",
     "```",
     "",
     "### Tmux session management",
     "",
     "```bash",
     "# Create worktree with tmux session",
-    "omw add feature/api --session --layout dev",
+    "oml add feature/api --session --layout dev",
     "",
     "# List active sessions",
-    "omw session --list",
+    "oml session --list",
     "",
     "# Attach to existing session",
-    "omw session feature/api",
+    "oml session feature/api",
     "```",
     "",
     "### Shell integration setup",
     "",
     "```bash",
     "# Add to ~/.zshrc or ~/.bashrc",
-    "eval \"$(omw shell-init)\"",
+    "eval \"$(oml shell-init)\"",
     "",
     "# Then switch worktrees with cd",
-    "omw switch feature/auth",
+    "oml switch feature/auth",
     "```",
     "",
     "## Command Overview",
@@ -627,18 +627,18 @@ export function generateSkillContent(): string {
     "Use focus paths to target packages and trigger matching monorepo hooks.",
     "",
     "```bash",
-    "omw add feature/web-auth --focus apps/web,apps/api",
-    "omw import /path/to/worktree --focus packages/core --pin",
-    "omw list --json",
+    "oml add feature/web-auth --focus apps/web,apps/api",
+    "oml import /path/to/worktree --focus packages/core --pin",
+    "oml list --json",
     "```",
     "",
     "Focus accepts comma-separated values, space-separated values, or repeated --focus flags.",
     "",
     "## Configuration",
     "",
-    "- Config path: `~/.config/oh-my-worktree/config.json`",
+    "- Config path: `~/.config/oh-my-lemontree/config.json`",
     "- Use `--json` output flags for scripting and automation",
-    "- Environment variables in `omw exec`: `OMW_BRANCH`, `OMW_WORKTREE_PATH`, `OMW_REPO_PATH`",
+    "- Environment variables in `oml exec`: `OML_BRANCH`, `OML_WORKTREE_PATH`, `OML_REPO_PATH`",
     "",
     "## Command Reference",
     "",
@@ -654,7 +654,7 @@ export function generateReferenceFiles(): Map<string, string> {
   const files = new Map<string, string>();
   for (const spec of referenceSpecs) {
     const lines = [
-      `# omw ${spec.command}`,
+      `# oml ${spec.command}`,
       "",
       spec.summary,
       "",
@@ -686,7 +686,7 @@ export function generateReferenceFiles(): Map<string, string> {
         ? [
             "## Configuration",
             "",
-            "Related config keys in `~/.config/oh-my-worktree/config.json`:",
+            "Related config keys in `~/.config/oh-my-lemontree/config.json`:",
             "",
             ...spec.configKeys.map((key) => `- ${key}`),
             "",
@@ -706,7 +706,7 @@ function generateConfigSchemaContent(): string {
   return [
     "# Configuration Schema",
     "",
-    "Config file path: `~/.config/oh-my-worktree/config.json`",
+    "Config file path: `~/.config/oh-my-lemontree/config.json`",
     "",
     "## Minimal Example",
     "",
@@ -714,7 +714,7 @@ function generateConfigSchemaContent(): string {
     "{",
     '  "version": 1,',
     '  "defaults": {',
-    '    "worktreeDir": "~/.omw/worktrees/{repo}-{branch}",',
+    '    "worktreeDir": "~/.oml/worktrees/{repo}-{branch}",',
     '    "copyFiles": [".env", ".env.local"],',
     '    "linkFiles": ["node_modules"],',
     '    "postCreate": ["bun install"],',
@@ -730,7 +730,7 @@ function generateConfigSchemaContent(): string {
     "{",
     '  "version": 1,',
     '  "defaults": {',
-    '    "worktreeDir": "~/.omw/worktrees/{repo}-{branch}",',
+    '    "worktreeDir": "~/.oml/worktrees/{repo}-{branch}",',
     '    "copyFiles": [".env"],',
     '    "linkFiles": [],',
     '    "postCreate": ["bun install"],',
@@ -771,7 +771,7 @@ function generateConfigSchemaContent(): string {
     '    "enabled": true,',
     '    "autoCreate": false,',
     '    "autoKill": true,',
-    '    "prefix": "omw",',
+    '    "prefix": "oml",',
     '    "defaultLayout": "dev",',
     '    "layouts": {',
     '      "dev": {',
@@ -798,7 +798,7 @@ function generateConfigSchemaContent(): string {
     "",
     "| Key | Type | Default | Description |",
     "|-----|------|---------|-------------|",
-    "| `worktreeDir` | string | `~/.omw/worktrees/{repo}-{branch}` | Directory pattern. Supports `{repo}` and `{branch}` variables |",
+    "| `worktreeDir` | string | `~/.oml/worktrees/{repo}-{branch}` | Directory pattern. Supports `{repo}` and `{branch}` variables |",
     "| `copyFiles` | string[] | `[]` | Files to copy from main worktree on creation |",
     "| `linkFiles` | string[] | `[]` | Files to symlink from main worktree on creation |",
     "| `postCreate` | string[] | `[]` | Shell commands to run after worktree creation |",
@@ -838,7 +838,7 @@ function generateConfigSchemaContent(): string {
     "",
     "### templates",
     "",
-    "Named presets applied via `omw add --template <name>` or `omw clone --template <name>`.",
+    "Named presets applied via `oml add --template <name>` or `oml clone --template <name>`.",
     "",
     "| Key | Type | Description |",
     "|-----|------|-------------|",
@@ -855,9 +855,9 @@ function generateConfigSchemaContent(): string {
     "| Key | Type | Default | Description |",
     "|-----|------|---------|-------------|",
     "| `enabled` | boolean | `false` | Enable tmux session integration |",
-    "| `autoCreate` | boolean | `false` | Auto-create session on `omw add` |",
-    "| `autoKill` | boolean | `false` | Auto-kill session on `omw remove` |",
-    "| `prefix` | string | `omw` | Prefix for tmux session names |",
+    "| `autoCreate` | boolean | `false` | Auto-create session on `oml add` |",
+    "| `autoKill` | boolean | `false` | Auto-kill session on `oml remove` |",
+    "| `prefix` | string | `oml` | Prefix for tmux session names |",
     "| `defaultLayout` | string | - | Default layout name |",
     "| `layouts.<name>.windows[]` | object[] | - | Window definitions |",
     "| `layouts.<name>.windows[].name` | string | **Required.** | Window name |",

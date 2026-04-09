@@ -7,7 +7,7 @@ import {
   writeAtomically,
   setNestedValue,
   validateConfig,
-  type OmwConfig,
+  type OmlConfig,
   type MonorepoHookConfig,
 } from "../../core/config.ts";
 import { useKeyboard, useTerminalDimensions, usePaste } from "@opentui/solid";
@@ -41,8 +41,8 @@ const INDENT_SIZE = 2;
 const LABEL_WIDTH = 30;
 
 const WORKTREE_DIR_PRESETS = [
-  "~/.omw/worktrees/{repo}-{branch}",
-  "~/.omw/worktree/{repo}-{branch}",
+  "~/.oml/worktrees/{repo}-{branch}",
+  "~/.oml/worktree/{repo}-{branch}",
   "../{repo}-{branch}",
   "~/code/worktrees/{repo}/{branch}",
 ];
@@ -92,7 +92,7 @@ const HOOK_POST_CREATE_PRESETS = [
   '["cd {packagePath} && pnpm install && pnpm build"]',
 ];
 
-const SESSIONS_PREFIX_PRESETS = ["omw", "wt"];
+const SESSIONS_PREFIX_PRESETS = ["oml", "wt"];
 
 const SHARED_DEPS_STRATEGY_VALUES = ["hardlink", "symlink", "copy"];
 
@@ -131,7 +131,7 @@ function inheritedOrBool(v: boolean | undefined): string {
   return v ? "true" : "false";
 }
 
-function buildRows(cfg: OmwConfig | null): Row[] {
+function buildRows(cfg: OmlConfig | null): Row[] {
   const rows: Row[] = [];
   if (!cfg) return rows;
 
@@ -857,7 +857,7 @@ export function ConfigView() {
   const dims = useTerminalDimensions();
   const configPath = getConfigPath();
 
-  const loadSafe = (): { cfg: OmwConfig | null; error: string } => {
+  const loadSafe = (): { cfg: OmlConfig | null; error: string } => {
     try {
       return { cfg: loadRawConfig(), error: "" };
     } catch (err) {
@@ -866,7 +866,7 @@ export function ConfigView() {
   };
 
   const initial = loadSafe();
-  const [cfg, setCfg] = createSignal<OmwConfig | null>(initial.cfg);
+  const [cfg, setCfg] = createSignal<OmlConfig | null>(initial.cfg);
   const [loadError, setLoadError] = createSignal(initial.error);
   const [message, setMessage] = createSignal("");
   const [messageType, setMessageType] = createSignal<"info" | "success" | "error">("info");

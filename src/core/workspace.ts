@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, statSync } from "fs";
 import { join, resolve } from "path";
-import type { OmwConfig, RepoConfig } from "./config.ts";
+import type { OmlConfig, RepoConfig } from "./config.ts";
 
 const DEFAULT_DEPTH = 1;
 const MAX_DEPTH = 3;
@@ -102,7 +102,7 @@ export function discoverRepos(
   return [...found].sort((a, b) => a.localeCompare(b));
 }
 
-export function expandWorkspaces(config: OmwConfig): OmwConfig {
+export function expandWorkspaces(config: OmlConfig): OmlConfig {
   const workspaces = config.workspaces;
   if (!workspaces || workspaces.length === 0) {
     return config;

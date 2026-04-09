@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
-import type { OmwConfig } from "./config.ts";
+import type { OmlConfig } from "./config.ts";
 import {
   applyProfile,
   createProfile,
@@ -17,7 +17,7 @@ interface ProfileValue {
   [key: string]: unknown;
 }
 
-interface ProfileConfig extends OmwConfig {
+interface ProfileConfig extends OmlConfig {
   profiles?: Record<string, ProfileValue>;
   activeProfile?: string;
 }
@@ -26,9 +26,9 @@ const originalXdgConfigHome = Bun.env.XDG_CONFIG_HOME;
 const originalHome = Bun.env.HOME;
 
 function setupTempConfig(initial: ProfileConfig): string {
-  const dir = createTempDir("omw-profiles-");
+  const dir = createTempDir("oml-profiles-");
   const xdgConfigHome = join(dir, "xdg");
-  const configDir = join(xdgConfigHome, "oh-my-worktree");
+  const configDir = join(xdgConfigHome, "oh-my-lemontree");
   const configPath = join(configDir, "config.json");
 
   mkdirSync(configDir, { recursive: true });

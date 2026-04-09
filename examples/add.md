@@ -1,11 +1,11 @@
-# omw add
+# oml add
 
 Create a new worktree for a branch.
 
 ## Usage
 
 ```
-omw add <branch> [path]
+oml add <branch> [path]
 ```
 
 ## Options
@@ -25,55 +25,55 @@ omw add <branch> [path]
 ### Create a worktree for an existing branch
 
 ```bash
-omw add feature/login
+oml add feature/login
 ```
 
 ### Create a worktree with a new branch
 
 ```bash
-omw add feature/auth
+oml add feature/auth
 ```
 
 ### Create a new branch based on a specific branch
 
 ```bash
-omw add feature/api --base develop
+oml add feature/api --base develop
 ```
 
 ### Specify a custom path for the worktree
 
 ```bash
-omw add feature/login ../my-project-login
+oml add feature/login ../my-project-login
 ```
 
 ### Create a worktree from a GitHub PR
 
 ```bash
-omw add --pr 42
+oml add --pr 42
 ```
 
 ### Use a config template
 
 ```bash
-omw add feature/dashboard --template frontend
+oml add feature/dashboard --template frontend
 ```
 
 ### Focus on specific monorepo packages
 
 ```bash
-omw add feature/auth --focus @app/web,@app/api
+oml add feature/auth --focus @app/web,@app/api
 ```
 
 ### Combine multiple options
 
 ```bash
-omw add feature/payments --base main --focus @app/billing --template backend
+oml add feature/payments --base main --focus @app/billing --template backend
 ```
 
 ### Create a worktree with a tmux session
 
 ```bash
-omw add feature/review --session --layout dev
+oml add feature/review --session --layout dev
 ```
 
 `--create` remains supported for backward compatibility, but new branches are now created automatically when missing.

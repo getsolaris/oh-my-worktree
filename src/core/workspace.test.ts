@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { mkdirSync, writeFileSync } from "fs";
 import { join, resolve } from "path";
-import type { OmwConfig } from "./config.ts";
+import type { OmlConfig } from "./config.ts";
 import { cleanupTempDirs, createTempDir, runGit } from "./test-helpers.ts";
 import { discoverRepos, expandWorkspaces } from "./workspace.ts";
 
@@ -22,12 +22,12 @@ afterEach(cleanupTempDirs);
 
 describe("discoverRepos", () => {
   it("returns empty array when workspace path does not exist", () => {
-    const result = discoverRepos("/tmp/omw-nonexistent-workspace-xyz");
+    const result = discoverRepos("/tmp/oml-nonexistent-workspace-xyz");
     expect(result).toEqual([]);
   });
 
   it("returns empty array when workspace path is a file, not a directory", () => {
-    const dir = createTempDir("omw-ws-file-");
+    const dir = createTempDir("oml-ws-file-");
     const filePath = join(dir, "not-a-dir.txt");
     writeFileSync(filePath, "content");
 
@@ -36,13 +36,13 @@ describe("discoverRepos", () => {
   });
 
   it("returns empty array for empty directory", () => {
-    const dir = createTempDir("omw-ws-empty-");
+    const dir = createTempDir("oml-ws-empty-");
     const result = discoverRepos(dir);
     expect(result).toEqual([]);
   });
 
   it("discovers a single git repo at depth 1", async () => {
-    const parent = createTempDir("omw-ws-single-");
+    const parent = createTempDir("oml-ws-single-");
     const repoA = createSubDir(parent, "repo-a");
     await initRepo(repoA);
 
@@ -52,7 +52,7 @@ describe("discoverRepos", () => {
   });
 
   it("discovers multiple git repos at depth 1", async () => {
-    const parent = createTempDir("omw-ws-multi-");
+    const parent = createTempDir("oml-ws-multi-");
     const repoA = createSubDir(parent, "alpha");
     const repoB = createSubDir(parent, "beta");
     const repoC = createSubDir(parent, "gamma");
@@ -68,7 +68,7 @@ describe("discoverRepos", () => {
   });
 
   it("returns sorted results", async () => {
-    const parent = createTempDir("omw-ws-sort-");
+    const parent = createTempDir("oml-ws-sort-");
     const repoZ = createSubDir(parent, "zebra");
     const repoA = createSubDir(parent, "alpha");
     await initRepo(repoZ);
@@ -80,7 +80,7 @@ describe("discoverRepos", () => {
   });
 
   it("skips non-git directories", async () => {
-    const parent = createTempDir("omw-ws-nongit-");
+    const parent = createTempDir("oml-ws-nongit-");
     const repoA = createSubDir(parent, "real-repo");
     createSubDir(parent, "not-a-repo");
     createSubDir(parent, "also-not-a-repo");
@@ -92,7 +92,7 @@ describe("discoverRepos", () => {
   });
 
   it("skips sub-worktrees where .git is a file, not a directory", async () => {
-    const parent = createTempDir("omw-ws-subworktree-");
+    const parent = createTempDir("oml-ws-subworktree-");
     const realRepo = createSubDir(parent, "main-repo");
     await initRepo(realRepo);
 
@@ -106,7 +106,7 @@ describe("discoverRepos", () => {
   });
 
   it("skips directories matching exclude patterns", async () => {
-    const parent = createTempDir("omw-ws-exclude-");
+    const parent = createTempDir("oml-ws-exclude-");
     const keep = createSubDir(parent, "keep-me");
     const skip = createSubDir(parent, "node_modules");
     await initRepo(keep);
@@ -118,7 +118,7 @@ describe("discoverRepos", () => {
   });
 
   it("exclude supports glob patterns", async () => {
-    const parent = createTempDir("omw-ws-exclude-glob-");
+    const parent = createTempDir("oml-ws-exclude-glob-");
     const keep = createSubDir(parent, "keep");
     const skip1 = createSubDir(parent, "temp-one");
     const skip2 = createSubDir(parent, "temp-two");
@@ -132,7 +132,7 @@ describe("discoverRepos", () => {
   });
 
   it("depth 1 does not descend into non-repo subdirectories", async () => {
-    const parent = createTempDir("omw-ws-depth1-");
+    const parent = createTempDir("oml-ws-depth1-");
     const nested = createSubDir(join(parent, "nested-dir"), "deep-repo");
     await initRepo(nested);
 
@@ -141,7 +141,7 @@ describe("discoverRepos", () => {
   });
 
   it("depth 2 descends one level through non-repo directories", async () => {
-    const parent = createTempDir("omw-ws-depth2-");
+    const parent = createTempDir("oml-ws-depth2-");
     const group = createSubDir(parent, "group-a");
     const nested = createSubDir(group, "nested-repo");
     await initRepo(nested);
@@ -152,7 +152,7 @@ describe("discoverRepos", () => {
   });
 
   it("depth 3 can discover repos three levels deep", async () => {
-    const parent = createTempDir("omw-ws-depth3-");
+    const parent = createTempDir("oml-ws-depth3-");
     const nested = createSubDir(join(parent, "group", "subgroup"), "target-repo");
     await initRepo(nested);
 
@@ -162,7 +162,7 @@ describe("discoverRepos", () => {
   });
 
   it("depth requests beyond the max are clamped and cannot reach deeper repos", async () => {
-    const parent = createTempDir("omw-ws-depth-clamp-");
+    const parent = createTempDir("oml-ws-depth-clamp-");
     const tooDeep = createSubDir(join(parent, "a", "b", "c"), "too-deep");
     await initRepo(tooDeep);
 
@@ -171,7 +171,7 @@ describe("discoverRepos", () => {
   });
 
   it("does not recurse into discovered repos even at higher depths", async () => {
-    const parent = createTempDir("omw-ws-no-recurse-");
+    const parent = createTempDir("oml-ws-no-recurse-");
     const outer = createSubDir(parent, "outer-repo");
     await initRepo(outer);
 
@@ -185,7 +185,7 @@ describe("discoverRepos", () => {
   });
 
   it("expands leading tilde using HOME env var", async () => {
-    const parent = createTempDir("omw-ws-home-");
+    const parent = createTempDir("oml-ws-home-");
     const repoA = createSubDir(parent, "home-repo");
     await initRepo(repoA);
 
@@ -207,25 +207,25 @@ describe("discoverRepos", () => {
 
 describe("expandWorkspaces", () => {
   it("returns input config unchanged when workspaces is undefined", () => {
-    const config: OmwConfig = { version: 1, repos: [{ path: "/tmp/a" }] };
+    const config: OmlConfig = { version: 1, repos: [{ path: "/tmp/a" }] };
     const result = expandWorkspaces(config);
     expect(result).toBe(config);
   });
 
   it("returns input config unchanged when workspaces is empty", () => {
-    const config: OmwConfig = { version: 1, workspaces: [], repos: [{ path: "/tmp/a" }] };
+    const config: OmlConfig = { version: 1, workspaces: [], repos: [{ path: "/tmp/a" }] };
     const result = expandWorkspaces(config);
     expect(result).toBe(config);
   });
 
   it("adds discovered repos to an empty repos array", async () => {
-    const parent = createTempDir("omw-expand-empty-");
+    const parent = createTempDir("oml-expand-empty-");
     const repoA = createSubDir(parent, "a");
     const repoB = createSubDir(parent, "b");
     await initRepo(repoA);
     await initRepo(repoB);
 
-    const config: OmwConfig = {
+    const config: OmlConfig = {
       version: 1,
       workspaces: [{ path: parent }],
     };
@@ -237,11 +237,11 @@ describe("expandWorkspaces", () => {
   });
 
   it("merges discovered repos alongside explicit repos", async () => {
-    const parent = createTempDir("omw-expand-merge-");
+    const parent = createTempDir("oml-expand-merge-");
     const discovered = createSubDir(parent, "discovered");
     await initRepo(discovered);
 
-    const config: OmwConfig = {
+    const config: OmlConfig = {
       version: 1,
       workspaces: [{ path: parent }],
       repos: [{ path: "/tmp/explicit-repo", copyFiles: [".env"] }],
@@ -254,11 +254,11 @@ describe("expandWorkspaces", () => {
   });
 
   it("explicit repos take precedence over discovered repos with same path", async () => {
-    const parent = createTempDir("omw-expand-precedence-");
+    const parent = createTempDir("oml-expand-precedence-");
     const shared = createSubDir(parent, "shared");
     await initRepo(shared);
 
-    const config: OmwConfig = {
+    const config: OmlConfig = {
       version: 1,
       workspaces: [{ path: parent, defaults: { copyFiles: ["from-workspace"] } }],
       repos: [{ path: shared, copyFiles: ["from-explicit"] }],
@@ -270,11 +270,11 @@ describe("expandWorkspaces", () => {
   });
 
   it("applies workspace defaults to discovered repos", async () => {
-    const parent = createTempDir("omw-expand-defaults-");
+    const parent = createTempDir("oml-expand-defaults-");
     const repoA = createSubDir(parent, "app");
     await initRepo(repoA);
 
-    const config: OmwConfig = {
+    const config: OmlConfig = {
       version: 1,
       workspaces: [
         {
@@ -298,11 +298,11 @@ describe("expandWorkspaces", () => {
   });
 
   it("first workspace wins when multiple workspaces discover the same repo", async () => {
-    const parent = createTempDir("omw-expand-dedup-");
+    const parent = createTempDir("oml-expand-dedup-");
     const repoA = createSubDir(parent, "app");
     await initRepo(repoA);
 
-    const config: OmwConfig = {
+    const config: OmlConfig = {
       version: 1,
       workspaces: [
         { path: parent, defaults: { copyFiles: ["first"] } },
@@ -316,11 +316,11 @@ describe("expandWorkspaces", () => {
   });
 
   it("does not mutate the input config", async () => {
-    const parent = createTempDir("omw-expand-immutable-");
+    const parent = createTempDir("oml-expand-immutable-");
     const repoA = createSubDir(parent, "app");
     await initRepo(repoA);
 
-    const config: OmwConfig = {
+    const config: OmlConfig = {
       version: 1,
       workspaces: [{ path: parent }],
       repos: [{ path: "/tmp/explicit" }],
@@ -336,8 +336,8 @@ describe("expandWorkspaces", () => {
   });
 
   it("returns input unchanged when workspace discovers nothing", () => {
-    const parent = createTempDir("omw-expand-empty-ws-");
-    const config: OmwConfig = {
+    const parent = createTempDir("oml-expand-empty-ws-");
+    const config: OmlConfig = {
       version: 1,
       workspaces: [{ path: parent }],
       repos: [{ path: "/tmp/a" }],
@@ -348,7 +348,7 @@ describe("expandWorkspaces", () => {
   });
 
   it("respects depth and exclude options per workspace", async () => {
-    const parent = createTempDir("omw-expand-options-");
+    const parent = createTempDir("oml-expand-options-");
     const immediate = createSubDir(parent, "immediate-repo");
     const deep = createSubDir(join(parent, "nested"), "deep-repo");
     const excluded = createSubDir(parent, "temp-cache");
@@ -356,7 +356,7 @@ describe("expandWorkspaces", () => {
     await initRepo(deep);
     await initRepo(excluded);
 
-    const config: OmwConfig = {
+    const config: OmlConfig = {
       version: 1,
       workspaces: [
         {

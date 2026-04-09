@@ -9,13 +9,13 @@ function detectShell(shellPath?: string): SupportedShell {
 }
 
 function getBashLikeInit(): string {
-  return `omw() {
+  return `oml() {
   if [ "$1" = "switch" ] || [ "$1" = "sw" ]; then
     local output
-    output=$(command omw "$@" 2>/dev/null)
+    output=$(command oml "$@" 2>/dev/null)
     local status=$?
     if [ $status -ne 0 ]; then
-      command omw "$@"
+      command oml "$@"
       return $status
     fi
 
@@ -25,18 +25,18 @@ function getBashLikeInit(): string {
       printf '%s\\n' "$output"
     fi
   else
-    command omw "$@"
+    command oml "$@"
   fi
 }`;
 }
 
 function getFishInit(): string {
-  return `function omw
+  return `function oml
   if test "$argv[1]" = "switch"; or test "$argv[1]" = "sw"
-    set output (command omw $argv 2>/dev/null)
+    set output (command oml $argv 2>/dev/null)
     set status_code $status
     if test $status_code -ne 0
-      command omw $argv
+      command oml $argv
       return $status_code
     end
 
@@ -46,13 +46,13 @@ function getFishInit(): string {
       printf '%s\\n' $output
     end
   else
-    command omw $argv
+    command oml $argv
   end
 end`;
 }
 
 function getBashCompletions(): string {
-  return `_omw_completions() {
+  return `_oml_completions() {
   local cur="\${COMP_WORDS[COMP_CWORD]}"
   local prev="\${COMP_WORDS[COMP_CWORD-1]}"
   local commands="add list remove switch clean config doctor pin log archive rename clone import exec diff open status shell-init"
@@ -76,11 +76,11 @@ function getBashCompletions(): string {
       ;;
   esac
 }
-complete -F _omw_completions omw`;
+complete -F _oml_completions oml`;
 }
 
 function getZshCompletions(): string {
-  return `_omw() {
+  return `_oml() {
   local -a commands
   commands=(
     'add:Add a new worktree'
@@ -94,7 +94,7 @@ function getZshCompletions(): string {
     'log:Show activity log'
     'archive:Archive worktree changes'
     'rename:Rename worktree branch'
-    'clone:Clone and init omw'
+    'clone:Clone and init oml'
     'import:Adopt a worktree'
     'exec:Run command in worktrees'
     'diff:Show diff between worktrees'
@@ -117,29 +117,29 @@ function getZshCompletions(): string {
     esac
   fi
 }
-compdef _omw omw`;
+compdef _oml oml`;
 }
 
 function getFishCompletions(): string {
-  return `complete -c omw -f
-complete -c omw -n '__fish_use_subcommand' -a 'add' -d 'Add a new worktree'
-complete -c omw -n '__fish_use_subcommand' -a 'list' -d 'List worktrees'
-complete -c omw -n '__fish_use_subcommand' -a 'remove' -d 'Remove a worktree'
-complete -c omw -n '__fish_use_subcommand' -a 'switch' -d 'Switch to a worktree'
-complete -c omw -n '__fish_use_subcommand' -a 'clean' -d 'Clean worktrees'
-complete -c omw -n '__fish_use_subcommand' -a 'config' -d 'Manage configuration'
-complete -c omw -n '__fish_use_subcommand' -a 'doctor' -d 'Health check'
-complete -c omw -n '__fish_use_subcommand' -a 'pin' -d 'Pin a worktree'
-complete -c omw -n '__fish_use_subcommand' -a 'log' -d 'Activity log'
-complete -c omw -n '__fish_use_subcommand' -a 'archive' -d 'Archive changes'
-complete -c omw -n '__fish_use_subcommand' -a 'rename' -d 'Rename branch'
-complete -c omw -n '__fish_use_subcommand' -a 'clone' -d 'Clone and init'
-complete -c omw -n '__fish_use_subcommand' -a 'import' -d 'Adopt worktree'
-complete -c omw -n '__fish_use_subcommand' -a 'exec' -d 'Run command'
-complete -c omw -n '__fish_use_subcommand' -a 'diff' -d 'Show diff'
-complete -c omw -n '__fish_use_subcommand' -a 'open' -d 'Open in editor'
-complete -c omw -n '__fish_use_subcommand' -a 'status' -d 'Show status'
-complete -c omw -n '__fish_seen_subcommand_from add switch rename pin archive' -a '(git branch --format="%(refname:short)" 2>/dev/null)'`;
+  return `complete -c oml -f
+complete -c oml -n '__fish_use_subcommand' -a 'add' -d 'Add a new worktree'
+complete -c oml -n '__fish_use_subcommand' -a 'list' -d 'List worktrees'
+complete -c oml -n '__fish_use_subcommand' -a 'remove' -d 'Remove a worktree'
+complete -c oml -n '__fish_use_subcommand' -a 'switch' -d 'Switch to a worktree'
+complete -c oml -n '__fish_use_subcommand' -a 'clean' -d 'Clean worktrees'
+complete -c oml -n '__fish_use_subcommand' -a 'config' -d 'Manage configuration'
+complete -c oml -n '__fish_use_subcommand' -a 'doctor' -d 'Health check'
+complete -c oml -n '__fish_use_subcommand' -a 'pin' -d 'Pin a worktree'
+complete -c oml -n '__fish_use_subcommand' -a 'log' -d 'Activity log'
+complete -c oml -n '__fish_use_subcommand' -a 'archive' -d 'Archive changes'
+complete -c oml -n '__fish_use_subcommand' -a 'rename' -d 'Rename branch'
+complete -c oml -n '__fish_use_subcommand' -a 'clone' -d 'Clone and init'
+complete -c oml -n '__fish_use_subcommand' -a 'import' -d 'Adopt worktree'
+complete -c oml -n '__fish_use_subcommand' -a 'exec' -d 'Run command'
+complete -c oml -n '__fish_use_subcommand' -a 'diff' -d 'Show diff'
+complete -c oml -n '__fish_use_subcommand' -a 'open' -d 'Open in editor'
+complete -c oml -n '__fish_use_subcommand' -a 'status' -d 'Show status'
+complete -c oml -n '__fish_seen_subcommand_from add switch rename pin archive' -a '(git branch --format="%(refname:short)" 2>/dev/null)'`;
 }
 
 function getCompletionsForShell(shell: SupportedShell): string {
@@ -155,7 +155,7 @@ function getCompletionsForShell(shell: SupportedShell): string {
 
 const cmd: CommandModule = {
   command: "shell-init [shell]",
-  describe: "Print shell integration code for omw switch",
+  describe: "Print shell integration code for oml switch",
   builder: (yargs) =>
     yargs
       .positional("shell", {

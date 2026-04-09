@@ -1,11 +1,11 @@
-# omw import
+# oml import
 
-Adopt an existing worktree into omw management with metadata tracking.
+Adopt an existing worktree into oml management with metadata tracking.
 
 ## Usage
 
 ```
-omw import <path>
+oml import <path>
 ```
 
 ## Options
@@ -20,23 +20,23 @@ omw import <path>
 ### Import an existing worktree
 
 ```bash
-omw import ../my-project-feature
+oml import ../my-project-feature
 ```
 
 ### Import with monorepo focus
 
 ```bash
-omw import ../my-project-feature --focus @app/web,@app/api
+oml import ../my-project-feature --focus @app/web,@app/api
 ```
 
 ### Import and pin immediately
 
 ```bash
-omw import ../my-project-feature --pin
+oml import ../my-project-feature --pin
 ```
 
 ### Import with focus and pin
 
 ```bash
-omw import ../my-project-hotfix --focus @app/core --pin
+oml import ../my-project-hotfix --focus @app/core --pin
 ```

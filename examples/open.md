@@ -1,11 +1,11 @@
-# omw open
+# oml open
 
 Open a worktree in your editor or IDE. Auto-detects `$VISUAL` / `$EDITOR` and falls back to a known list of editors (`code`, `cursor`, `vim`, `nvim`, `emacs`, `nano`, `subl`, `zed`, `idea`, `webstorm`).
 
 ## Usage
 
 ```
-omw open [branch-or-path]
+oml open [branch-or-path]
 ```
 
 If no argument is given, opens the current worktree.
@@ -21,7 +21,7 @@ If no argument is given, opens the current worktree.
 
 ## Focus-aware behavior
 
-`omw open` is aware of the focus paths set when a worktree is created with `--focus`:
+`oml open` is aware of the focus paths set when a worktree is created with `--focus`:
 
 - **0 focus paths set** → opens the worktree root (default behavior).
 - **Exactly 1 focus path set** → opens `<worktree>/<focus>` automatically.
@@ -32,59 +32,59 @@ If no argument is given, opens the current worktree.
 ### Open the current worktree in your default editor
 
 ```bash
-omw open
+oml open
 ```
 
 ### Open a specific worktree
 
 ```bash
-omw open feature/login
+oml open feature/login
 ```
 
 ### Open with a specific editor
 
 ```bash
-omw open feature/login --editor code
+oml open feature/login --editor code
 ```
 
 ### Open with a different IDE
 
 ```bash
-omw open feature/login -e "webstorm"
+oml open feature/login -e "webstorm"
 ```
 
 ### Open a worktree that has a single focus path
 
 ```bash
-omw add feature/web --focus apps/web
-omw open feature/web
+oml add feature/web --focus apps/web
+oml open feature/web
 # → opens <worktree>/apps/web automatically
 ```
 
 ### Open a specific focus path on a multi-focus worktree
 
 ```bash
-omw add feature/full --focus apps/web,apps/api
-omw open feature/full
+oml add feature/full --focus apps/web,apps/api
+oml open feature/full
 # → Error: worktree has multiple focus paths set: apps/web, apps/api
 #          Use --focus <path> to pick one, or --root to open the worktree root.
 
-omw open feature/full --focus apps/api
+oml open feature/full --focus apps/api
 # → opens <worktree>/apps/api
 
-omw open feature/full -f apps/web
+oml open feature/full -f apps/web
 # → opens <worktree>/apps/web
 ```
 
 ### Force the worktree root, ignoring focus
 
 ```bash
-omw open feature/full --root
+oml open feature/full --root
 # → opens <worktree> (the repo root inside the worktree)
 ```
 
 ### List available editors
 
 ```bash
-omw open --list-editors
+oml open --list-editors
 ```

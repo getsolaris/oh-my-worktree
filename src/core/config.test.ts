@@ -9,7 +9,7 @@ import {
   loadConfig,
   loadRawConfig,
   setNestedValue,
-  type OmwConfig,
+  type OmlConfig,
   validateConfig,
 } from "./config";
 import { cleanupTempDirs, createTempDir, runGit } from "./test-helpers";
@@ -35,7 +35,7 @@ afterEach(() => {
 
 describe("validateConfig", () => {
   it("valid config passes with no errors", () => {
-    const valid: OmwConfig = {
+    const valid: OmlConfig = {
       version: 1,
       defaults: {
         worktreeDir: "../{repo}-{branch}",
@@ -107,7 +107,7 @@ describe("validateConfig - autoUpstream", () => {
 
 describe("getRepoConfig", () => {
   it("returns defaults when no repo match", () => {
-    const config: OmwConfig = {
+    const config: OmlConfig = {
       version: 1,
       defaults: {
         worktreeDir: "../defaults/{repo}-{branch}",
@@ -129,7 +129,7 @@ describe("getRepoConfig", () => {
 
   it("repo overrides take precedence over defaults", () => {
     const repoPath = "/tmp/repo-override";
-    const config: OmwConfig = {
+    const config: OmlConfig = {
       version: 1,
       defaults: {
         worktreeDir: "../defaults/{repo}-{branch}",
@@ -160,7 +160,7 @@ describe("getRepoConfig", () => {
 
   it("partial override merges with defaults", () => {
     const repoPath = "/tmp/repo-partial";
-    const config: OmwConfig = {
+    const config: OmlConfig = {
       version: 1,
       defaults: {
         worktreeDir: "../defaults/{repo}-{branch}",
@@ -183,13 +183,13 @@ describe("getRepoConfig", () => {
 
 describe("getRepoConfig - autoUpstream", () => {
   it("defaults to true when autoUpstream is missing", () => {
-    const config: OmwConfig = { version: 1, repos: [{ path: "/tmp/repo" }] };
+    const config: OmlConfig = { version: 1, repos: [{ path: "/tmp/repo" }] };
 
     expect(getRepoConfig(config, "/tmp/repo").autoUpstream).toBeTrue();
   });
 
   it("defaults.autoUpstream false resolves to false", () => {
-    const config: OmwConfig = {
+    const config: OmlConfig = {
       version: 1,
       defaults: { autoUpstream: false },
       repos: [{ path: "/tmp/repo" }],
@@ -199,7 +199,7 @@ describe("getRepoConfig - autoUpstream", () => {
   });
 
   it("repo override false beats defaults true", () => {
-    const config: OmwConfig = {
+    const config: OmlConfig = {
       version: 1,
       defaults: { autoUpstream: true },
       repos: [{ path: "/tmp/repo", autoUpstream: false }],
@@ -209,7 +209,7 @@ describe("getRepoConfig - autoUpstream", () => {
   });
 
   it("repo inherits defaults when autoUpstream missing", () => {
-    const config: OmwConfig = {
+    const config: OmlConfig = {
       version: 1,
       defaults: { autoUpstream: false },
       repos: [{ path: "/tmp/repo", worktreeDir: "/tmp/wt" }],
@@ -239,13 +239,13 @@ describe("expandTemplate", () => {
   });
 
   it("expands tilde to home directory", () => {
-    const result = expandTemplate("~/.omw/worktrees/{repo}-{branch}", {
+    const result = expandTemplate("~/.oml/worktrees/{repo}-{branch}", {
       repo: "my-app",
       branch: "feature-login",
     });
 
     const home = Bun.env.HOME ?? "~";
-    expect(result).toBe(`${home}/.omw/worktrees/my-app-feature-login`);
+    expect(result).toBe(`${home}/.oml/worktrees/my-app-feature-login`);
   });
 
   it("does not expand tilde in middle of path", () => {
@@ -260,7 +260,7 @@ describe("expandTemplate", () => {
 
 describe("initConfig", () => {
   it("creates config file in temp dir", async () => {
-    const dir = createTempDir("omw-config-init-");
+    const dir = createTempDir("oml-config-init-");
     const configPath = join(dir, "nested", "config.json");
 
     const createdPath = initConfig(configPath);
@@ -273,7 +273,7 @@ describe("initConfig", () => {
   });
 
   it("returns existing config path without overwriting the file", async () => {
-    const dir = createTempDir("omw-config-existing-");
+    const dir = createTempDir("oml-config-existing-");
     const configPath = join(dir, "config.json");
     writeFileSync(configPath, JSON.stringify({ version: 1, defaults: { worktreeDir: "custom" } }, null, 2), "utf-8");
 
@@ -287,14 +287,14 @@ describe("initConfig", () => {
 
 describe("loadConfig", () => {
   it("returns default when no file exists", () => {
-    const dir = createTempDir("omw-config-missing-");
+    const dir = createTempDir("oml-config-missing-");
     const configPath = join(dir, "no-config.json");
 
     const loaded = loadConfig(configPath);
     expect(loaded).toEqual({
       version: 1,
       defaults: {
-        worktreeDir: "~/.omw/worktrees/{repo}-{branch}",
+        worktreeDir: "~/.oml/worktrees/{repo}-{branch}",
         copyFiles: [],
         linkFiles: [],
         postCreate: [],
@@ -306,7 +306,7 @@ describe("loadConfig", () => {
   });
 
   it("throws on invalid JSON", () => {
-    const dir = createTempDir("omw-config-invalid-json-");
+    const dir = createTempDir("oml-config-invalid-json-");
     const configPath = join(dir, "config.json");
     writeFileSync(configPath, "{ invalid json", "utf-8");
 
@@ -314,7 +314,7 @@ describe("loadConfig", () => {
   });
 
   it("throws on schema validation failure", () => {
-    const dir = createTempDir("omw-config-invalid-schema-");
+    const dir = createTempDir("oml-config-invalid-schema-");
     const configPath = join(dir, "config.json");
     writeFileSync(configPath, JSON.stringify({ version: 2 }, null, 2), "utf-8");
 
@@ -322,9 +322,9 @@ describe("loadConfig", () => {
   });
 
   it("applies activeProfile overrides safely", () => {
-    const dir = createTempDir("omw-config-profile-");
+    const dir = createTempDir("oml-config-profile-");
     const xdgConfigHome = join(dir, "xdg");
-    const configDir = join(xdgConfigHome, "oh-my-worktree");
+    const configDir = join(xdgConfigHome, "oh-my-lemontree");
     const configPath = join(configDir, "config.json");
 
     mkdirSync(configDir, { recursive: true });
@@ -334,7 +334,7 @@ describe("loadConfig", () => {
     writeFileSync(configPath, JSON.stringify({
       version: 1,
       defaults: {
-        worktreeDir: "~/.omw/worktrees/{repo}-{branch}",
+        worktreeDir: "~/.oml/worktrees/{repo}-{branch}",
         autoUpstream: true,
       },
       profiles: {
@@ -356,7 +356,7 @@ describe("loadConfig", () => {
   });
 
   it("throws when activeProfile produces an invalid resolved config", () => {
-    const dir = createTempDir("omw-config-profile-invalid-");
+    const dir = createTempDir("oml-config-profile-invalid-");
     const configPath = join(dir, "config.json");
     writeFileSync(configPath, JSON.stringify({
       version: 1,
@@ -446,7 +446,7 @@ describe("getRepoConfig - monorepo", () => {
       extraPatterns: ["apps/*/*"],
       hooks: [{ glob: "apps/*", postCreate: ["pnpm install"] }],
     };
-    const config: OmwConfig = {
+    const config: OmlConfig = {
       version: 1,
       repos: [{ path: repoPath, monorepo: monorepoConfig }],
     };
@@ -455,7 +455,7 @@ describe("getRepoConfig - monorepo", () => {
   });
 
   it("repo without monorepo config returns undefined monorepo", () => {
-    const config: OmwConfig = { version: 1, repos: [{ path: "/tmp/no-mono" }] };
+    const config: OmlConfig = { version: 1, repos: [{ path: "/tmp/no-mono" }] };
     const resolved = getRepoConfig(config, "/tmp/no-mono");
     expect(resolved.monorepo).toBeUndefined();
   });
@@ -550,7 +550,7 @@ describe("loadConfig - workspaces expansion", () => {
   }
 
   it("expands workspace discovered repos into config.repos", async () => {
-    const parent = createTempDir("omw-load-ws-expand-");
+    const parent = createTempDir("oml-load-ws-expand-");
     const repoA = join(parent, "project-a");
     const repoB = join(parent, "project-b");
     mkdirSync(repoA);
@@ -558,7 +558,7 @@ describe("loadConfig - workspaces expansion", () => {
     await initTempRepo(repoA);
     await initTempRepo(repoB);
 
-    const configDir = createTempDir("omw-load-ws-config-");
+    const configDir = createTempDir("oml-load-ws-config-");
     const configPath = join(configDir, "config.json");
     writeFileSync(
       configPath,
@@ -575,12 +575,12 @@ describe("loadConfig - workspaces expansion", () => {
   });
 
   it("explicit repos take precedence over workspace-discovered repos with same path", async () => {
-    const parent = createTempDir("omw-load-ws-precedence-");
+    const parent = createTempDir("oml-load-ws-precedence-");
     const repoPath = join(parent, "shared-repo");
     mkdirSync(repoPath);
     await initTempRepo(repoPath);
 
-    const configDir = createTempDir("omw-load-ws-pre-config-");
+    const configDir = createTempDir("oml-load-ws-pre-config-");
     const configPath = join(configDir, "config.json");
     writeFileSync(
       configPath,
@@ -604,19 +604,19 @@ describe("loadConfig - workspaces expansion", () => {
   });
 
   it("discovered repos inherit workspace defaults via getRepoConfig", async () => {
-    const parent = createTempDir("omw-load-ws-defaults-");
+    const parent = createTempDir("oml-load-ws-defaults-");
     const repoA = join(parent, "app");
     mkdirSync(repoA);
     await initTempRepo(repoA);
 
-    const configDir = createTempDir("omw-load-ws-def-config-");
+    const configDir = createTempDir("oml-load-ws-def-config-");
     const configPath = join(configDir, "config.json");
     writeFileSync(
       configPath,
       JSON.stringify({
         version: 1,
         defaults: {
-          worktreeDir: "~/.omw/global/{repo}-{branch}",
+          worktreeDir: "~/.oml/global/{repo}-{branch}",
           postCreate: ["global-post"],
         },
         workspaces: [
@@ -635,11 +635,11 @@ describe("loadConfig - workspaces expansion", () => {
     const resolved = getRepoConfig(loaded, resolve(repoA));
     expect(resolved.copyFiles).toEqual([".env.workspace"]);
     expect(resolved.postCreate).toEqual(["workspace-post"]);
-    expect(resolved.worktreeDir).toBe("~/.omw/global/{repo}-{branch}");
+    expect(resolved.worktreeDir).toBe("~/.oml/global/{repo}-{branch}");
   });
 
   it("loadConfig without workspaces behaves unchanged", async () => {
-    const configDir = createTempDir("omw-load-ws-none-");
+    const configDir = createTempDir("oml-load-ws-none-");
     const configPath = join(configDir, "config.json");
     writeFileSync(
       configPath,
@@ -654,7 +654,7 @@ describe("loadConfig - workspaces expansion", () => {
   });
 
   it("throws validation error for invalid workspaces config", () => {
-    const configDir = createTempDir("omw-load-ws-invalid-");
+    const configDir = createTempDir("oml-load-ws-invalid-");
     const configPath = join(configDir, "config.json");
     writeFileSync(
       configPath,
@@ -677,7 +677,7 @@ describe("loadRawConfig", () => {
   }
 
   it("returns default config when no file exists", () => {
-    const dir = createTempDir("omw-raw-missing-");
+    const dir = createTempDir("oml-raw-missing-");
     const configPath = join(dir, "no-config.json");
 
     const loaded = loadRawConfig(configPath);
@@ -686,7 +686,7 @@ describe("loadRawConfig", () => {
   });
 
   it("does NOT expand workspace-discovered repos into repos[]", async () => {
-    const parent = createTempDir("omw-raw-no-expand-");
+    const parent = createTempDir("oml-raw-no-expand-");
     const repoA = join(parent, "discovered-a");
     const repoB = join(parent, "discovered-b");
     mkdirSync(repoA);
@@ -694,7 +694,7 @@ describe("loadRawConfig", () => {
     await initTempRepo(repoA);
     await initTempRepo(repoB);
 
-    const configDir = createTempDir("omw-raw-no-expand-config-");
+    const configDir = createTempDir("oml-raw-no-expand-config-");
     const configPath = join(configDir, "config.json");
     writeFileSync(
       configPath,
@@ -718,12 +718,12 @@ describe("loadRawConfig", () => {
   });
 
   it("returns empty repos when only workspaces are configured", async () => {
-    const parent = createTempDir("omw-raw-only-ws-");
+    const parent = createTempDir("oml-raw-only-ws-");
     const repoA = join(parent, "alpha");
     mkdirSync(repoA);
     await initTempRepo(repoA);
 
-    const configDir = createTempDir("omw-raw-only-ws-config-");
+    const configDir = createTempDir("oml-raw-only-ws-config-");
     const configPath = join(configDir, "config.json");
     writeFileSync(
       configPath,
@@ -739,7 +739,7 @@ describe("loadRawConfig", () => {
   });
 
   it("preserves explicit repos exactly as authored", () => {
-    const dir = createTempDir("omw-raw-explicit-");
+    const dir = createTempDir("oml-raw-explicit-");
     const configPath = join(dir, "config.json");
     writeFileSync(
       configPath,
@@ -760,7 +760,7 @@ describe("loadRawConfig", () => {
   });
 
   it("throws on invalid JSON", () => {
-    const dir = createTempDir("omw-raw-invalid-json-");
+    const dir = createTempDir("oml-raw-invalid-json-");
     const configPath = join(dir, "config.json");
     writeFileSync(configPath, "{ invalid json", "utf-8");
 
@@ -768,7 +768,7 @@ describe("loadRawConfig", () => {
   });
 
   it("throws on schema validation failure", () => {
-    const dir = createTempDir("omw-raw-invalid-schema-");
+    const dir = createTempDir("oml-raw-invalid-schema-");
     const configPath = join(dir, "config.json");
     writeFileSync(configPath, JSON.stringify({ version: 2 }, null, 2), "utf-8");
 
@@ -776,12 +776,12 @@ describe("loadRawConfig", () => {
   });
 
   it("applies activeProfile but skips workspace expansion", async () => {
-    const parent = createTempDir("omw-raw-profile-");
+    const parent = createTempDir("oml-raw-profile-");
     const repoA = join(parent, "discovered");
     mkdirSync(repoA);
     await initTempRepo(repoA);
 
-    const configDir = createTempDir("omw-raw-profile-config-");
+    const configDir = createTempDir("oml-raw-profile-config-");
     const configPath = join(configDir, "config.json");
     writeFileSync(
       configPath,
@@ -805,7 +805,7 @@ describe("loadRawConfig", () => {
 
 describe("ensureConfigInitialized", () => {
   it("creates config file when missing and reports created=true", () => {
-    const dir = createTempDir("omw-ensure-create-");
+    const dir = createTempDir("oml-ensure-create-");
     const configPath = join(dir, "nested", "config.json");
     expect(existsSync(configPath)).toBeFalse();
 
@@ -816,7 +816,7 @@ describe("ensureConfigInitialized", () => {
   });
 
   it("is idempotent: second call reports created=false", () => {
-    const dir = createTempDir("omw-ensure-idempotent-");
+    const dir = createTempDir("oml-ensure-idempotent-");
     const configPath = join(dir, "config.json");
 
     const first = ensureConfigInitialized(configPath);
@@ -828,7 +828,7 @@ describe("ensureConfigInitialized", () => {
   });
 
   it("does not overwrite an existing config file", async () => {
-    const dir = createTempDir("omw-ensure-no-overwrite-");
+    const dir = createTempDir("oml-ensure-no-overwrite-");
     const configPath = join(dir, "config.json");
     const customConfig = JSON.stringify(
       { version: 1, defaults: { worktreeDir: "custom-marker" } },
@@ -845,13 +845,13 @@ describe("ensureConfigInitialized", () => {
   });
 
   it("respects XDG_CONFIG_HOME when no override path is given", () => {
-    const dir = createTempDir("omw-ensure-xdg-");
+    const dir = createTempDir("oml-ensure-xdg-");
     Bun.env.XDG_CONFIG_HOME = dir;
     Bun.env.HOME = dir;
 
     const result = ensureConfigInitialized();
     expect(result.created).toBeTrue();
-    expect(result.path).toBe(join(dir, "oh-my-worktree", "config.json"));
+    expect(result.path).toBe(join(dir, "oh-my-lemontree", "config.json"));
     expect(existsSync(result.path)).toBeTrue();
   });
 });

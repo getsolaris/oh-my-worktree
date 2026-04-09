@@ -1,12 +1,12 @@
 ---
-name: omw-cli-smoke-testing
-description: This skill should be used when the user asks to "run all commands", "smoke test the CLI", "test every omw command", "do manual QA", "verify commands in isolation", or "exhaustively test oh-my-worktree".
+name: oml-cli-smoke-testing
+description: This skill should be used when the user asks to "run all commands", "smoke test the CLI", "test every oml command", "do manual QA", "verify commands in isolation", or "exhaustively test oh-my-lemontree".
 version: 0.2.0
 ---
 
-# omw CLI Smoke Testing
+# oml CLI Smoke Testing
 
-Use this skill to run exhaustive, real-command QA for `oh-my-worktree` without touching the developer's real repo, shell config, or tmux state.
+Use this skill to run exhaustive, real-command QA for `oh-my-lemontree` without touching the developer's real repo, shell config, or tmux state.
 
 ## Purpose
 
@@ -37,7 +37,7 @@ Keep `AGENTS.md` short. Put the long-form manual QA procedure here.
 5. Capture exact command, cwd, relevant env isolation, exit code, stdout, and stderr.
 6. Distinguish fixture problems from product bugs by re-running suspicious failures in a cleaner fixture.
 7. Every boolean flag must have at least one positive test. Every string/number flag must have one valid-value test and one invalid-value test. Every alias must be tested at least once.
-8. Use `bun run src/index.ts` not `omw` for all dev-mode testing.
+8. Use `bun run src/index.ts` not `oml` for all dev-mode testing.
 
 ## Execution Workflow
 

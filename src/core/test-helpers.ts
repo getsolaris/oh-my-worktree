@@ -43,7 +43,7 @@ export async function runGit(args: string[], cwd?: string): Promise<void> {
   }
 }
 
-export async function createTempRepo(prefix = "omw-test-"): Promise<string> {
+export async function createTempRepo(prefix = "oml-test-"): Promise<string> {
   const dir = createTempDir(prefix);
   writeFileSync(join(dir, "README.md"), "# temp repo\n");
 
@@ -55,7 +55,7 @@ export async function createTempRepo(prefix = "omw-test-"): Promise<string> {
 }
 
 export async function createTempRepoWithRemote(
-  prefix = "omw-test-",
+  prefix = "oml-test-",
 ): Promise<{ repoPath: string; remotePath: string }> {
   const repoPath = await createTempRepo(prefix);
   const remotePath = createTempDir(`${prefix}remote-`);

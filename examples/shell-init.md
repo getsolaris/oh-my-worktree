@@ -1,11 +1,11 @@
-# omw shell-init
+# oml shell-init
 
-Print shell integration code for `omw switch`. Required for automatic directory switching.
+Print shell integration code for `oml switch`. Required for automatic directory switching.
 
 ## Usage
 
 ```
-omw shell-init [shell]
+oml shell-init [shell]
 ```
 
 Supported shells: `bash`, `zsh`, `fish`
@@ -23,7 +23,7 @@ Supported shells: `bash`, `zsh`, `fish`
 Add to your `~/.zshrc`:
 
 ```bash
-eval "$(omw shell-init zsh)"
+eval "$(oml shell-init zsh)"
 ```
 
 ### Set up bash integration
@@ -31,7 +31,7 @@ eval "$(omw shell-init zsh)"
 Add to your `~/.bashrc`:
 
 ```bash
-eval "$(omw shell-init bash)"
+eval "$(oml shell-init bash)"
 ```
 
 ### Set up fish integration
@@ -39,23 +39,23 @@ eval "$(omw shell-init bash)"
 Add to your `~/.config/fish/config.fish`:
 
 ```fish
-omw shell-init fish | source
+oml shell-init fish | source
 ```
 
 ### Generate zsh completions
 
 ```bash
-omw shell-init --completions zsh > ~/.zsh/completions/_omw
+oml shell-init --completions zsh > ~/.zsh/completions/_oml
 ```
 
 ### Generate bash completions
 
 ```bash
-omw shell-init --completions bash > /etc/bash_completion.d/omw
+oml shell-init --completions bash > /etc/bash_completion.d/oml
 ```
 
 ### Generate fish completions
 
 ```bash
-omw shell-init --completions fish > ~/.config/fish/completions/omw.fish
+oml shell-init --completions fish > ~/.config/fish/completions/oml.fish
 ```

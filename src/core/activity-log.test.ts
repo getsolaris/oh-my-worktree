@@ -17,22 +17,22 @@ afterEach(() => {
 });
 
 describe("getActivityLogPath", () => {
-  it("returns .git/omw-activity.log for main worktree", async () => {
+  it("returns .git/oml-activity.log for main worktree", async () => {
     const repoPath = await createTempRepo();
     const activityLogPath = getActivityLogPath(repoPath);
 
-    expect(activityLogPath).toBe(join(repoPath, ".git", "omw-activity.log"));
+    expect(activityLogPath).toBe(join(repoPath, ".git", "oml-activity.log"));
   });
 
   it("returns git metadata dir path for linked worktree", async () => {
     const repoPath = await createTempRepo();
-    const wtPath = createTempDir("omw-activity-wt-");
+    const wtPath = createTempDir("oml-activity-wt-");
     await runGit(["worktree", "add", wtPath, "-b", "activity-linked"], repoPath);
 
     const activityLogPath = getActivityLogPath(wtPath);
 
     expect(activityLogPath).not.toContain(join(wtPath, ".git"));
-    expect(activityLogPath).toContain("omw-activity.log");
+    expect(activityLogPath).toContain("oml-activity.log");
     expect(activityLogPath).toContain(repoPath);
   });
 });

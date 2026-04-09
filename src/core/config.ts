@@ -87,7 +87,7 @@ export interface WorkspaceConfig {
   defaults?: RepoDefaults;
 }
 
-export interface OmwConfig {
+export interface OmlConfig {
   version: 1;
   defaults?: RepoDefaults;
   repos?: RepoConfig[];
@@ -110,9 +110,9 @@ export interface ValidationError {
   message: string;
 }
 
-const DEFAULT_WORKTREE_DIR = "~/.omw/worktrees/{repo}-{branch}";
+const DEFAULT_WORKTREE_DIR = "~/.oml/worktrees/{repo}-{branch}";
 
-const DEFAULT_CONFIG: OmwConfig = {
+const DEFAULT_CONFIG: OmlConfig = {
   version: 1,
   defaults: {
     worktreeDir: DEFAULT_WORKTREE_DIR,
@@ -148,7 +148,7 @@ function validateStringArray(
 export function getConfigDir(): string {
   const xdgConfig = Bun.env.XDG_CONFIG_HOME;
   const base = xdgConfig ?? join(Bun.env.HOME ?? "~", ".config");
-  return join(base, "oh-my-worktree");
+  return join(base, "oh-my-lemontree");
 }
 
 export function getConfigPath(): string {
@@ -659,7 +659,7 @@ function deepMerge(base: unknown, override: unknown): unknown {
   return result;
 }
 
-function applyActiveProfile(config: OmwConfig): OmwConfig {
+function applyActiveProfile(config: OmlConfig): OmlConfig {
   if (!config.activeProfile) {
     return structuredClone(config);
   }
@@ -669,10 +669,10 @@ function applyActiveProfile(config: OmwConfig): OmwConfig {
     throw new Error(`Active profile '${config.activeProfile}' does not exist`);
   }
 
-  return deepMerge(config, profile) as OmwConfig;
+  return deepMerge(config, profile) as OmlConfig;
 }
 
-function loadConfigCore(overridePath?: string): OmwConfig {
+function loadConfigCore(overridePath?: string): OmlConfig {
   const configPath = overridePath ?? getConfigPath();
 
   if (!fs.existsSync(configPath)) {
@@ -702,7 +702,7 @@ function loadConfigCore(overridePath?: string): OmwConfig {
     throw new Error(`Config validation failed: ${message}`);
   }
 
-  const resolved = applyActiveProfile(parsed as OmwConfig);
+  const resolved = applyActiveProfile(parsed as OmlConfig);
   const resolvedErrors = validateConfig(resolved);
   if (resolvedErrors.length > 0) {
     const message = resolvedErrors.map((e) => `${e.field}: ${e.message}`).join("; ");
@@ -712,15 +712,15 @@ function loadConfigCore(overridePath?: string): OmwConfig {
   return resolved;
 }
 
-export function loadConfig(overridePath?: string): OmwConfig {
+export function loadConfig(overridePath?: string): OmlConfig {
   return expandWorkspaces(loadConfigCore(overridePath));
 }
 
-export function loadRawConfig(overridePath?: string): OmwConfig {
+export function loadRawConfig(overridePath?: string): OmlConfig {
   return loadConfigCore(overridePath);
 }
 
-export function getRepoConfig(config: OmwConfig, repoPath: string): ResolvedRepoConfig {
+export function getRepoConfig(config: OmlConfig, repoPath: string): ResolvedRepoConfig {
   const normalizedPath = resolve(repoPath);
   const repoOverride = config.repos?.find((repo) => resolve(repo.path) === normalizedPath);
 
@@ -738,7 +738,7 @@ export function getRepoConfig(config: OmwConfig, repoPath: string): ResolvedRepo
   };
 }
 
-export function getConfiguredRepoPaths(config: OmwConfig): string[] {
+export function getConfiguredRepoPaths(config: OmlConfig): string[] {
   return (config.repos ?? []).map((repo) => resolve(repo.path));
 }
 
@@ -782,7 +782,7 @@ export function ensureConfigInitialized(overridePath?: string): EnsureConfigResu
 }
 
 export function resolveTemplate(
-  config: OmwConfig,
+  config: OmlConfig,
   templateName: string,
 ): TemplateConfig | undefined {
   return config.templates?.[templateName];
@@ -804,15 +804,15 @@ export function mergeTemplateWithRepo(
   };
 }
 
-export function getTemplateNames(config: OmwConfig): string[] {
+export function getTemplateNames(config: OmlConfig): string[] {
   return Object.keys(config.templates ?? {});
 }
 
-export function getSessionConfig(config: OmwConfig): SessionConfig {
+export function getSessionConfig(config: OmlConfig): SessionConfig {
   return config.sessions ?? {};
 }
 
-export function resolveSessionLayout(config: OmwConfig, layoutName?: string): SessionLayoutConfig | undefined {
+export function resolveSessionLayout(config: OmlConfig, layoutName?: string): SessionLayoutConfig | undefined {
   const sessions = config.sessions;
   if (!sessions?.layouts) return undefined;
   const name = layoutName ?? sessions.defaultLayout;

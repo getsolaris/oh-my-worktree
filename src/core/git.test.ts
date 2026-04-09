@@ -89,7 +89,7 @@ describe("GitWorktree integration", () => {
   let testDir = "";
 
   beforeEach(async () => {
-    testDir = await createTempRepo("omw-test-");
+    testDir = await createTempRepo("oml-test-");
   });
 
   afterEach(() => {
@@ -104,7 +104,7 @@ describe("GitWorktree integration", () => {
   });
 
   it("list() with a linked worktree returns 2 entries", async () => {
-    const worktreePath = join(testDir, "..", `omw-wt-${Date.now()}`);
+    const worktreePath = join(testDir, "..", `oml-wt-${Date.now()}`);
     try {
       await GitWorktree.add("feature/list", worktreePath, { createBranch: true }, testDir);
 
@@ -117,7 +117,7 @@ describe("GitWorktree integration", () => {
   });
 
   it("add() creates worktree directory", async () => {
-    const worktreePath = join(testDir, "..", `omw-add-${Date.now()}`);
+    const worktreePath = join(testDir, "..", `oml-add-${Date.now()}`);
     try {
       await GitWorktree.add("feature/add", worktreePath, { createBranch: true }, testDir);
       expect(existsSync(worktreePath)).toBeTrue();
@@ -127,7 +127,7 @@ describe("GitWorktree integration", () => {
   });
 
   it("add() creates a missing branch without createBranch option", async () => {
-    const worktreePath = join(testDir, "..", `omw-auto-create-${Date.now()}`);
+    const worktreePath = join(testDir, "..", `oml-auto-create-${Date.now()}`);
     try {
       await GitWorktree.add("feature/auto-create", worktreePath, undefined, testDir);
 
@@ -139,8 +139,8 @@ describe("GitWorktree integration", () => {
   });
 
   it("add() uses base only when creating a new branch", async () => {
-    const createdPath = join(testDir, "..", `omw-base-created-${Date.now()}`);
-    const existingPath = join(testDir, "..", `omw-base-existing-${Date.now()}`);
+    const createdPath = join(testDir, "..", `oml-base-created-${Date.now()}`);
+    const existingPath = join(testDir, "..", `oml-base-existing-${Date.now()}`);
 
     try {
       await runGit(["checkout", "-b", "develop"], testDir);
@@ -162,7 +162,7 @@ describe("GitWorktree integration", () => {
   });
 
   it("remove() removes worktree directory", async () => {
-    const worktreePath = join(testDir, "..", `omw-remove-${Date.now()}`);
+    const worktreePath = join(testDir, "..", `oml-remove-${Date.now()}`);
     await GitWorktree.add("feature/remove", worktreePath, { createBranch: true }, testDir);
     expect(existsSync(worktreePath)).toBeTrue();
 
@@ -182,7 +182,7 @@ describe("GitWorktree integration", () => {
   });
 
   it("list() from non-git directory throws GitError with not a git repository", async () => {
-    const nonGitDir = createTempDir("omw-non-git-");
+    const nonGitDir = createTempDir("oml-non-git-");
     try {
       await expect(GitWorktree.list(nonGitDir)).rejects.toBeInstanceOf(GitError);
 
@@ -207,7 +207,7 @@ describe("GitWorktree upstream methods", () => {
   let remoteDir = "";
 
   beforeEach(async () => {
-    const result = await createTempRepoWithRemote("omw-upstream-");
+    const result = await createTempRepoWithRemote("oml-upstream-");
     testDir = result.repoPath;
     remoteDir = result.remotePath;
   });
@@ -249,7 +249,7 @@ describe("GitWorktree upstream methods", () => {
 
   it("setUpstream() does not overwrite existing upstream", async () => {
     const branch = (await GitWorktree.getBranchForWorktree(testDir)) as string;
-    const backupRemote = createTempDir("omw-backup-remote-");
+    const backupRemote = createTempDir("oml-backup-remote-");
 
     await runGit(["init", "--bare"], backupRemote);
     await runGit(["remote", "add", "backup", backupRemote], testDir);

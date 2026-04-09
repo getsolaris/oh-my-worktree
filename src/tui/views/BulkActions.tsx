@@ -60,9 +60,9 @@ export function BulkActions(props: { w: number; h: number }) {
           await executeHooks(repoConfig.postRemove, {
             cwd: t.path,
             env: {
-              OMW_BRANCH: t.branch,
-              OMW_WORKTREE_PATH: t.path,
-              OMW_REPO_PATH: t.repoPath,
+              OML_BRANCH: t.branch,
+              OML_WORKTREE_PATH: t.path,
+              OML_REPO_PATH: t.repoPath,
             },
           }).catch(() => {});
         }

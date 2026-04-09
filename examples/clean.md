@@ -1,11 +1,11 @@
-# omw clean
+# oml clean
 
 Remove merged worktrees and prune stale entries.
 
 ## Usage
 
 ```
-omw clean
+oml clean
 ```
 
 ## Options
@@ -21,29 +21,29 @@ omw clean
 ### Preview what would be cleaned
 
 ```bash
-omw clean --dry-run
+oml clean --dry-run
 ```
 
 ### Clean merged worktrees
 
 ```bash
-omw clean
+oml clean
 ```
 
 ### Clean without confirmation
 
 ```bash
-omw clean -y
+oml clean -y
 ```
 
 ### Include stale worktrees in cleanup
 
 ```bash
-omw clean --stale
+oml clean --stale
 ```
 
 ### Preview stale worktrees without removing
 
 ```bash
-omw clean --stale --dry-run
+oml clean --stale --dry-run
 ```

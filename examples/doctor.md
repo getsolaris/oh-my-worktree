@@ -1,4 +1,4 @@
-# omw doctor
+# oml doctor
 
 Check worktree health and diagnose issues.
 
@@ -7,7 +7,7 @@ Runs checks for git version, config validity, stale worktrees, orphaned director
 ## Usage
 
 ```
-omw doctor
+oml doctor
 ```
 
 ## Options
@@ -22,17 +22,17 @@ omw doctor
 ### Run all health checks
 
 ```bash
-omw doctor
+oml doctor
 ```
 
 ### Auto-fix detected issues
 
 ```bash
-omw doctor --fix
+oml doctor --fix
 ```
 
 ### Output results as JSON
 
 ```bash
-omw doctor --json
+oml doctor --json
 ```
