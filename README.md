@@ -10,6 +10,10 @@
 
 Manage git worktrees with ease. Create, switch, and clean up worktrees with config-driven automation, monorepo support, and built-in health checks.
 
+### Why "copse"?
+
+A **copse** is a small group of trees growing closely together. Git worktrees are branches checked out as separate working directories — each one a *tree*. When you manage multiple worktrees for a single repo, you're tending a little grove. That's a copse.
+
 ## Features
 
 - **TUI mode** — interactive terminal UI (`copse`)
