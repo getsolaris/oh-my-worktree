@@ -37,6 +37,16 @@ export function WorktreeRemove() {
   const doRemove = async (force: boolean) => {
     const wt = targetWorktree();
     if (!wt) { closeDialog(); return; }
+
+    if (!force) {
+      const dirty = await GitWorktree.isDirty(wt.path);
+      if (dirty) {
+        setMessage("Worktree has changes. Press Enter to force remove.");
+        setConfirmForce(true);
+        return;
+      }
+    }
+
     setRemoving(true);
     setMessage("Removing...");
     try {
@@ -72,15 +82,9 @@ export function WorktreeRemove() {
       setTimeout(closeDialog, 1000);
     } catch (err) {
       const errMsg = (err as Error).message;
-      if (!force && errMsg.includes("dirty")) {
-        setMessage("Worktree has changes. Press Enter to force remove.");
-        setRemoving(false);
-        setConfirmForce(true);
-      } else {
-        setMessage(`Failed: ${errMsg}`);
-        setRemoving(false);
-        toast.error(`Failed: ${errMsg}`);
-      }
+      setMessage(`Failed: ${errMsg}`);
+      setRemoving(false);
+      toast.error(`Failed: ${errMsg}`);
     }
   };
 

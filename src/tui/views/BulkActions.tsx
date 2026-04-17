@@ -49,11 +49,18 @@ export function BulkActions(props: { w: number; h: number }) {
     setProgress(0);
 
     const errors: string[] = [];
+    const skippedDirty: string[] = [];
+    let removed = 0;
     for (let i = 0; i < targets.length; i++) {
       const t = targets[i];
       setMessage(`Removing ${t.branch} (${i + 1}/${targets.length})...`);
       setProgress(i);
       try {
+        const dirty = await GitWorktree.isDirty(t.path);
+        if (dirty) {
+          skippedDirty.push(t.branch);
+          continue;
+        }
         const config = loadConfig();
         const repoConfig = getRepoConfig(config, t.repoPath);
         if (repoConfig.postRemove.length > 0) {
@@ -67,6 +74,7 @@ export function BulkActions(props: { w: number; h: number }) {
           }).catch(() => {});
         }
         await GitWorktree.remove(t.path, { force: false }, t.repoPath);
+        removed++;
       } catch (err) {
         errors.push(`${t.branch}: ${(err as Error).message}`);
       }
@@ -80,9 +88,16 @@ export function BulkActions(props: { w: number; h: number }) {
 
     if (errors.length > 0) {
       setState("error");
-      setMessage(`Failed: ${errors.join("; ")}`);
+      const parts = [`Failed: ${errors.join("; ")}`];
+      if (skippedDirty.length > 0) parts.push(`Skipped ${skippedDirty.length} dirty worktree(s)`);
+      setMessage(parts.join(". "));
       toast.addToast({ message: `Failed to remove ${errors.length} worktree(s)`, type: "error" });
       setTimeout(closeDialog, 3000);
+    } else if (skippedDirty.length > 0) {
+      setState("done");
+      setMessage(`Removed ${removed}, skipped ${skippedDirty.length} dirty: ${skippedDirty.join(", ")}`);
+      toast.addToast({ message: `Removed ${removed}, skipped ${skippedDirty.length} dirty`, type: "warning" });
+      setTimeout(closeDialog, 2000);
     } else {
       setState("done");
       setMessage(`Removed ${targets.length} worktree(s) successfully!`);
