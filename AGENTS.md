@@ -168,8 +168,8 @@ All git commands go through `GitWorktree.run()` (private static). This:
 
 ## Subdirectory Guides
 
-- `src/core/AGENTS.md` — Module API surface, git cache invalidation rules, error contracts, testing patterns
-- `src/tui/AGENTS.md` — Component tree, state architecture, keyboard scoping, theme integration, performance rules
+- `src/core/AGENTS.md` — Module API surface, orchestration layer (single source of truth for worktree side effects), git cache invalidation rules, error contracts, testing patterns
+- `src/tui/AGENTS.md` — Component tree, state architecture, keyboard scoping, theme integration, performance rules, orchestration delegation rule
 
 ## Key Constraints
 
@@ -179,6 +179,85 @@ All git commands go through `GitWorktree.run()` (private static). This:
 - Config file: `~/.config/copse/config.json` (XDG-compliant)
 - Focus metadata: stored in git internals (`<gitdir>/copse-focus`), not in worktree root
 - Session metadata: stored in git internals (`<gitdir>/copse-session`), not in worktree root
+
+## Modification Guidelines (CLI/TUI Parity)
+
+The most painful class of bugs in this project has been **silent feature drift** between the CLI and TUI: a new behavior gets wired into `copse add` but not into the TUI's Create view, or a bug is fixed in CLI `remove` while the TUI and `BulkActions` keep the stale code. The rules below exist to prevent that.
+
+### Rule 1 — Worktree side effects live in `src/core/orchestration/`, not in callers
+
+Any logic that mutates a worktree on create, remove, archive, import, or rename — file copy, symlinks, shared deps, hook execution, focus write, session open/kill, PR metadata, activity log — MUST live in the relevant `orchestration/*.ts` flow. CLI commands and TUI views are thin adapters that only:
+
+1. Collect user input / CLI args
+2. Pick a `StepProgressHandler` implementation (console output vs. SolidJS progress state)
+3. Call the flow
+
+**DO NOT** inline hook execution, session management, or activity logging in `src/cli/cmd/*.ts` or `src/tui/views/*.tsx`. That code path will drift.
+
+### Rule 2 — New config-driven side effects go in the flow AND its step-plan
+
+When you add a new side effect that should fire based on config (e.g., a new hook, a new metadata write, a new cleanup step):
+
+1. Add a step ID to the relevant `*_STEP_IDS` constant in `src/core/orchestration/types.ts`.
+2. Add it to the planner (so `onStepPlan` shows it when enabled, hides it when disabled).
+3. Add the execution block inside the flow, wrapped with `handler.onStepStart` / `onStepDone` / `onStepError`.
+4. Update `orchestration.test.ts` to assert the step is planned AND executed for the relevant config.
+
+The step-plan is the public contract; UI callers rely on it to render progress.
+
+### Rule 3 — New CLI flag that changes worktree flow goes through orchestration opts
+
+Adding `--foo` to `copse add`? The flag's value must flow into `CreateWorktreeOpts` (and friends), not stay inside `src/cli/cmd/add.ts`. That way:
+
+- Tests can exercise `--foo` via the orchestration function directly
+- The TUI can expose the same option via an input/toggle later without reimplementing the logic
+- The parity test in `orchestration.test.ts` catches the case "same config produces same plan regardless of caller"
+
+### Rule 4 — When fixing a bug in CLI, check the TUI (and vice versa)
+
+Before shipping a fix, grep for the symptom and the fix surface:
+
+```bash
+# Is this call site duplicated in TUI/CLI?
+rg -t ts "closeSession|executeHooks|matchHooksForFocus|logActivity" src/cli src/tui
+```
+
+If yes, the fix belongs in `src/core/orchestration/` and both callers get it for free. Don't patch only one.
+
+### Rule 5 — When composing flows, use the plan/execute split pattern
+
+`removeWorktreeFlow` is split into `planRemoveWorktreeSteps()` + `executeRemoveWorktreeFlow()` + `removeWorktreeFlow()` (public entry). When a new flow (e.g., `archiveWorktreeFlow`) needs to reuse it:
+
+1. Call `planRemoveWorktreeSteps()` to get the plan — but do NOT emit it yet.
+2. Build a combined plan (archive's own steps + remove's steps).
+3. Emit the combined plan once via `handler.onStepPlan`.
+4. Execute archive's own steps.
+5. Call `executeRemoveWorktreeFlow(plan, opts, handlerWithoutOnStepPlan)` — it does NOT re-emit.
+
+This keeps the UI's step list stable across composed flows. When you add a new composable flow, expose `planXxxSteps()` + `executeXxxFlow()` + `xxxFlow()` the same way.
+
+### Rule 6 — Every new flow or non-trivial flow change ships with a parity test
+
+`src/core/orchestration/orchestration.test.ts` must have at least:
+
+- A "minimal" test — flow runs with the empty config
+- A "full" test — flow runs with every feature enabled, each step plans + executes
+- An error/rollback test where relevant
+- A parity test when a second caller (CLI and TUI) exists — same config produces same step plan regardless of entry point
+
+Treat these tests as a **contract**: they're the line of defense against silent drift.
+
+### Rule 7 — `core/*` never imports from `src/cli/*`
+
+The `src/core/` tree is UI-agnostic. If an orchestration flow needs something that currently lives in `src/cli/utils.ts` (e.g., `resolveMainRepo`), promote the helper into `src/core/` or take the value as an input. Circular `core → cli` imports will fail subtly at runtime when imported from the TUI.
+
+### Rule 8 — Empty catch blocks require a codebase-matching form
+
+Core modules throw; CLI catches and formats. For best-effort cleanup (rollback, activity log), use `.catch(() => {})` inline rather than `try { ... } catch {}` blocks with comments. See existing examples in `create-worktree.ts`.
+
+### Rule 9 — When changing orchestration output, update all `onStepDone` / `onStepError` handler sites
+
+The CLI's `console.log` mapping and the TUI's progress UI both switch on step IDs. When you add / rename / remove a step ID, update the switches in `src/cli/cmd/*.ts` and `src/tui/views/*.tsx` to match, or they'll go silent without warning.
 
 ## Feature Completion Checklist
 

@@ -64,9 +64,11 @@ The `inputFocused` signal lives in AppContext and is set/cleared by `<input>` fo
 
 ## Worktree Operations: Delegate to Orchestration
 
-TUI views that create or remove worktrees **must not** re-implement the pipeline (fetch, copy files, hooks, session create/kill, activity log, etc.). Call `createWorktreeFlow` / `removeWorktreeFlow` from `src/core/orchestration/` instead.
+TUI views that create, remove, archive, import, or rename worktrees **must not** re-implement the pipeline (fetch, copy files, hooks, session create/kill, activity log, etc.). Call the matching `xxxWorktreeFlow` from `src/core/orchestration/` instead.
 
 **Why:** adding a feature to only one caller (CLI or TUI) is how parity bugs happen — missing session auto-create, missing monorepo postRemove hooks, missing activity logs. The orchestration layer is the single source of truth; the handler callbacks are the ONLY UI-specific glue.
+
+For the full list of modification rules, see **"Modification Guidelines (CLI/TUI Parity)"** in the top-level `AGENTS.md`. In particular, read Rule 4 ("when fixing a bug in CLI, check the TUI") before shipping a fix — most TUI regressions have been caused by patching only one side.
 
 **Pattern:**
 ```tsx

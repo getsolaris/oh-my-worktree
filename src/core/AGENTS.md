@@ -87,6 +87,8 @@ Never add new checks that call `list()` independently.
 
 **Rule:** any step that triggers a side effect during worktree create/remove/archive/import/rename MUST live here, not in the caller. Adding a new config-driven step (e.g., new hook, new metadata write) to only one caller is a bug — it WILL drift.
 
+For the full list of modification rules (new flag → orchestration opts; compose flows via plan/execute split; parity tests; etc.), see the **"Modification Guidelines (CLI/TUI Parity)"** section in the top-level `AGENTS.md`. This subdir doc only covers the contract shape.
+
 **Composition pattern:** when one flow needs to reuse another (e.g. `archiveWorktreeFlow` needs to remove the worktree when `--keep` is false), use the split `planXxxSteps()` + `executeXxxFlow()` pair. The composer:
 
 1. Calls `planRemoveWorktreeSteps()` to get the remove plan without executing or emitting it.
