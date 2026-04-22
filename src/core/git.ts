@@ -452,4 +452,44 @@ export class GitWorktree {
 
     await this.run(["branch", `--set-upstream-to=${effectiveRemote}/${branch}`, branch], dir);
   }
+
+  static async getRemotes(cwd?: string): Promise<string[]> {
+    const dir = cwd ?? (Bun as any).cwd;
+    const cacheKey = `remotes:${dir}`;
+    const cached = getCached<string[]>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const output = await this.run(["remote"], dir);
+      const remotes = output
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+      return setCache(cacheKey, remotes);
+    } catch {
+      return setCache(cacheKey, []);
+    }
+  }
+
+  static async fetchRemote(remote: string, ref?: string, cwd?: string): Promise<void> {
+    const args = ref ? ["fetch", remote, ref] : ["fetch", remote];
+    await this.run(args, cwd);
+    invalidateGitCache();
+  }
+}
+
+export function parseRemoteRef(
+  ref: string,
+  remotes: readonly string[],
+): { remote: string; branch: string } | null {
+  if (!ref || ref.startsWith("refs/")) return null;
+  const slashIndex = ref.indexOf("/");
+  if (slashIndex <= 0) return null;
+
+  const remote = ref.slice(0, slashIndex);
+  const branch = ref.slice(slashIndex + 1);
+  if (!branch) return null;
+  if (!remotes.includes(remote)) return null;
+
+  return { remote, branch };
 }

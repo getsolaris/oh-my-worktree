@@ -299,6 +299,8 @@ Every commit runs `validateConfig` before writing. Invalid input surfaces as an 
 ```bash
 copse add feature/login                        # Create branch if needed + worktree
 copse add feature/login --base main            # New branches start from main
+copse add feature/login --base origin/main     # Auto-fetches origin/main first (see below)
+copse add feature/login --base origin/main --no-fetch  # Skip auto-fetch
 copse add existing-branch                      # Worktree for existing branch
 
 # Monorepo: create with focus packages
@@ -312,6 +314,33 @@ copse add feature/login --template review
 copse add --pr 123
 copse add --pr 456 --template review
 ```
+
+#### Remote-aware base + auto-fetch
+
+When `--base` (or `defaults.base` in config) matches `<remote>/<branch>` and `<remote>` is a
+known git remote, `copse add` runs `git fetch <remote> <branch>` before creating the worktree.
+This prevents accidentally branching from a stale local copy of a remote-tracking ref.
+
+- `--base main`, `--base develop`, `--base HEAD`, `--base <sha>` → no fetch (local ref).
+- `--base origin/main`, `--base upstream/release/v2` → fetch that specific branch, then branch from it.
+- `--base fork/main` when `fork` is not a configured remote → treated as a local ref (no fetch).
+- Fetch failures (offline, auth errors) print a warning and continue with the local copy.
+- Auto-fetch is skipped when the target branch already exists locally (`--base` only matters for new branches).
+
+Pass `--no-fetch` to skip the auto-fetch unconditionally. Set `defaults.base` to make
+remote-aware base the default for every `copse add`:
+
+```json
+{
+  "version": 1,
+  "defaults": {
+    "base": "origin/main"
+  }
+}
+```
+
+Base resolution order (highest wins): `--base` flag → `template.base` → per-repo
+`repos[].base` → `defaults.base` → git `HEAD`.
 
 ### `copse doctor`
 
@@ -673,6 +702,7 @@ All repos inherit these unless overridden.
 | `linkFiles`   | `string[]` | `[]`                               | Files/dirs to symlink (saves disk)      |
 | `postCreate`  | `string[]` | `[]`                               | Commands to run after worktree creation |
 | `postRemove`  | `string[]` | `[]`                               | Commands to run before worktree removal |
+| `base`        | `string`   | —                                  | Default base ref for new branches. If it matches `<remote>/<branch>` of a known remote, `copse add` auto-runs `git fetch <remote> <branch>` first |
 
 #### `repos[]`
 
@@ -686,6 +716,7 @@ Per-repo overrides. Each entry requires `path`.
 | `linkFiles`   | `string[]` | No       | Override default link files         |
 | `postCreate`  | `string[]` | No       | Override default post-create hooks  |
 | `postRemove`  | `string[]` | No       | Override default post-remove hooks  |
+| `base`        | `string`   | No       | Override default base ref           |
 | `monorepo`    | `object`   | No       | Monorepo support config             |
 
 #### `workspaces[]`

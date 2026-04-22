@@ -19,6 +19,7 @@ export interface RepoDefaults {
   postRemove?: string[];
   autoUpstream?: boolean;
   sharedDeps?: SharedDepsConfig;
+  base?: string;
 }
 
 export interface MonorepoHookConfig {
@@ -100,9 +101,10 @@ export interface OmlConfig {
   activeProfile?: string;
 }
 
-export interface ResolvedRepoConfig extends Omit<Required<RepoDefaults>, "sharedDeps"> {
+export interface ResolvedRepoConfig extends Omit<Required<RepoDefaults>, "sharedDeps" | "base"> {
   monorepo?: MonorepoConfig;
   sharedDeps?: SharedDepsConfig;
+  base?: string;
 }
 
 export interface ValidationError {
@@ -133,6 +135,7 @@ const DEFAULT_RESOLVED: ResolvedRepoConfig = {
   postRemove: [],
   autoUpstream: true,
   sharedDeps: undefined,
+  base: undefined,
 };
 
 function validateStringArray(
@@ -156,8 +159,8 @@ export function getConfigPath(): string {
 }
 
 const VALID_ROOT_KEYS = new Set(["version", "defaults", "repos", "workspaces", "$schema", "theme", "templates", "lifecycle", "sessions", "profiles", "activeProfile"]);
-const VALID_DEFAULT_KEYS = new Set(["worktreeDir", "copyFiles", "linkFiles", "postCreate", "postRemove", "autoUpstream", "sharedDeps"]);
-const VALID_REPO_KEYS = new Set(["path", "worktreeDir", "copyFiles", "linkFiles", "postCreate", "postRemove", "autoUpstream", "monorepo", "sharedDeps"]);
+const VALID_DEFAULT_KEYS = new Set(["worktreeDir", "copyFiles", "linkFiles", "postCreate", "postRemove", "autoUpstream", "sharedDeps", "base"]);
+const VALID_REPO_KEYS = new Set(["path", "worktreeDir", "copyFiles", "linkFiles", "postCreate", "postRemove", "autoUpstream", "monorepo", "sharedDeps", "base"]);
 const VALID_WORKSPACE_KEYS = new Set(["path", "depth", "exclude", "defaults"]);
 const VALID_MONOREPO_KEYS = new Set(["autoDetect", "extraPatterns", "hooks"]);
 const VALID_TEMPLATE_KEYS = new Set(["worktreeDir", "copyFiles", "linkFiles", "postCreate", "postRemove", "autoUpstream", "base"]);
@@ -207,6 +210,10 @@ export function validateConfig(data: unknown): ValidationError[] {
 
       if ("autoUpstream" in d && typeof d.autoUpstream !== "boolean") {
         errors.push({ field: "defaults.autoUpstream", message: "Must be a boolean" });
+      }
+
+      if ("base" in d && typeof d.base !== "string") {
+        errors.push({ field: "defaults.base", message: "Must be a string" });
       }
 
       for (const arrayKey of [
@@ -267,6 +274,10 @@ export function validateConfig(data: unknown): ValidationError[] {
 
         if ("autoUpstream" in r && typeof r.autoUpstream !== "boolean") {
           errors.push({ field: `${fieldPrefix}.autoUpstream`, message: "Must be a boolean" });
+        }
+
+        if ("base" in r && typeof r.base !== "string") {
+          errors.push({ field: `${fieldPrefix}.base`, message: "Must be a string" });
         }
 
         for (const arrayKey of [
@@ -400,6 +411,10 @@ export function validateConfig(data: unknown): ValidationError[] {
 
             if ("autoUpstream" in d && typeof d.autoUpstream !== "boolean") {
               errors.push({ field: `${fieldPrefix}.defaults.autoUpstream`, message: "Must be a boolean" });
+            }
+
+            if ("base" in d && typeof d.base !== "string") {
+              errors.push({ field: `${fieldPrefix}.defaults.base`, message: "Must be a string" });
             }
 
             for (const arrayKey of [
@@ -735,6 +750,7 @@ export function getRepoConfig(config: OmlConfig, repoPath: string): ResolvedRepo
       repoOverride?.autoUpstream ?? config.defaults?.autoUpstream ?? DEFAULT_RESOLVED.autoUpstream,
     monorepo: repoOverride?.monorepo,
     sharedDeps: repoOverride?.sharedDeps ?? config.defaults?.sharedDeps,
+    base: repoOverride?.base ?? config.defaults?.base,
   };
 }
 
@@ -801,6 +817,7 @@ export function mergeTemplateWithRepo(
     autoUpstream: template.autoUpstream ?? repoConfig.autoUpstream,
     monorepo: repoConfig.monorepo,
     sharedDeps: repoConfig.sharedDeps,
+    base: template.base ?? repoConfig.base,
   };
 }
 

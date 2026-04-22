@@ -167,6 +167,7 @@ bun run src/index.ts shell-init
 | `--pr` | number | — | GitHub PR number (requires `gh` CLI) |
 | `--session` | boolean | `-s` | Create tmux session after add |
 | `--layout` | string | — | Session layout name from config |
+| `--no-fetch` | boolean | — | Skip auto-fetch when `--base` is a remote ref |
 
 **Test invocations:**
 
@@ -236,6 +237,35 @@ bun run src/index.ts add feature/smoke-test  # second time
 # negative: --template with nonexistent template name
 bun run src/index.ts add feature/smoke-bad-template --template nonexistent
 # expect: exit 1, error about unknown template
+
+# --base <remote>/<branch>: auto-fetch before create
+# Fixture: consumer repo cloned from bare remote; advance remote, then:
+bun run src/index.ts add feature/smoke-remote-base --base origin/main
+# expect: exit 0, stdout contains "Fetching origin/main..." AND "✓ Fetched origin/main"
+# expect: consumer's refs/remotes/origin/main advances to match remote HEAD
+
+# --no-fetch: skip auto-fetch even when base is a remote ref
+bun run src/index.ts add feature/smoke-no-fetch --base origin/main --no-fetch
+# expect: exit 0, stdout does NOT contain "Fetching"
+# expect: consumer's refs/remotes/origin/main stays stale
+
+# --base local-branch: no fetch attempted
+bun run src/index.ts add feature/smoke-local-base --base main
+# expect: exit 0, stdout does NOT contain "Fetching"
+
+# --base <unknown-remote>/<branch>: treated as local ref, no fetch
+bun run src/index.ts add feature/smoke-fork-base --base fork/main
+# expect: exit 1, git error "Not a valid object name: fork/main" (no fetch attempted)
+
+# defaults.base = origin/main in config → auto-fetch on bare `copse add`
+echo '{ "version": 1, "defaults": { "base": "origin/main" } }' > "$XDG_CONFIG_HOME/copse/config.json"
+bun run src/index.ts add feature/smoke-config-base
+# expect: exit 0, stdout contains "Fetching origin/main..."
+
+# defaults.base with wrong type → validation error
+echo '{ "version": 1, "defaults": { "base": 42 } }' > "$XDG_CONFIG_HOME/copse/config.json"
+bun run src/index.ts add feature/smoke-bad-base-type
+# expect: exit 1, "Config validation failed: defaults.base: Must be a string"
 ```
 
 ---

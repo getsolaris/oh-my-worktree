@@ -1,7 +1,7 @@
 import type { CommandModule } from "yargs";
 import { basename, resolve } from "node:path";
 import { existsSync } from "node:fs";
-import { GitWorktree } from "../../core/git.ts";
+import { GitWorktree, parseRemoteRef } from "../../core/git.ts";
 import { GitError } from "../../core/types.ts";
 import { loadConfig, getRepoConfig, expandTemplate, resolveTemplate, mergeTemplateWithRepo, getSessionConfig, resolveSessionLayout } from "../../core/config.ts";
 import { resolveMainRepo } from "../utils.ts";
@@ -60,6 +60,11 @@ const cmd: CommandModule = {
       .option("layout", {
         type: "string",
         describe: "Session layout name from config",
+      })
+      .option("fetch", {
+        type: "boolean",
+        default: true,
+        describe: "Auto-fetch when base is a remote ref (e.g. origin/main). Use --no-fetch to skip",
       }),
   handler: async (argv) => {
     let branch = argv.branch as string | undefined;
@@ -158,13 +163,32 @@ const cmd: CommandModule = {
       process.exit(1);
     }
 
+    const resolvedBase = (argv.base as string | undefined) ?? repoConfig.base;
+    const shouldFetch = argv.fetch !== false;
+    const branchAlreadyExists = await GitWorktree.localBranchExists(branch, mainRepoPath);
+
+    if (resolvedBase && shouldFetch && !branchAlreadyExists) {
+      const remotes = await GitWorktree.getRemotes(mainRepoPath);
+      const parsed = parseRemoteRef(resolvedBase, remotes);
+      if (parsed) {
+        console.log(`  Fetching ${parsed.remote}/${parsed.branch}...`);
+        try {
+          await GitWorktree.fetchRemote(parsed.remote, parsed.branch, mainRepoPath);
+          console.log(`  ✓ Fetched ${parsed.remote}/${parsed.branch}`);
+        } catch (err) {
+          const msg = err instanceof GitError ? (err.stderr || err.message) : (err as Error).message;
+          console.log(`  ⚠ Fetch failed (${msg.split("\n")[0]}) — continuing with local ref`);
+        }
+      }
+    }
+
     try {
       await GitWorktree.add(
         branch,
         worktreePath,
         {
           createBranch: Boolean(argv.create),
-          base: argv.base as string | undefined,
+          base: resolvedBase,
         },
         mainRepoPath,
       );

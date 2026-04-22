@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { existsSync, realpathSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
-import { GitWorktree, invalidateGitCache } from "./git";
+import { GitWorktree, invalidateGitCache, parseRemoteRef } from "./git";
 import { GitError } from "./types";
 import {
   cleanupTempDirs,
@@ -273,5 +273,160 @@ describe("GitWorktree upstream methods", () => {
 
     const remote = await GitWorktree.getDefaultRemote(testDir);
     expect(remote).toBe("upstream");
+  });
+});
+
+describe("parseRemoteRef", () => {
+  const remotes = ["origin", "upstream"];
+
+  it("parses a simple remote ref", () => {
+    expect(parseRemoteRef("origin/main", remotes)).toEqual({ remote: "origin", branch: "main" });
+  });
+
+  it("parses a slash-containing branch", () => {
+    expect(parseRemoteRef("origin/feature/auth", remotes)).toEqual({
+      remote: "origin",
+      branch: "feature/auth",
+    });
+  });
+
+  it("parses a non-origin remote", () => {
+    expect(parseRemoteRef("upstream/release/v2", remotes)).toEqual({
+      remote: "upstream",
+      branch: "release/v2",
+    });
+  });
+
+  it("returns null for a bare branch name", () => {
+    expect(parseRemoteRef("main", remotes)).toBeNull();
+  });
+
+  it("returns null for HEAD", () => {
+    expect(parseRemoteRef("HEAD", remotes)).toBeNull();
+  });
+
+  it("returns null for a commit sha", () => {
+    expect(parseRemoteRef("abc1234def", remotes)).toBeNull();
+  });
+
+  it("returns null when first segment is not a known remote", () => {
+    expect(parseRemoteRef("fork/main", remotes)).toBeNull();
+  });
+
+  it("returns null for fully-qualified refs/ prefixed refs", () => {
+    expect(parseRemoteRef("refs/remotes/origin/main", remotes)).toBeNull();
+    expect(parseRemoteRef("refs/heads/main", remotes)).toBeNull();
+  });
+
+  it("returns null for empty string", () => {
+    expect(parseRemoteRef("", remotes)).toBeNull();
+  });
+
+  it("returns null when remote matches but branch is empty", () => {
+    expect(parseRemoteRef("origin/", remotes)).toBeNull();
+  });
+
+  it("returns null for leading slash", () => {
+    expect(parseRemoteRef("/origin/main", remotes)).toBeNull();
+  });
+
+  it("returns null with empty remotes list", () => {
+    expect(parseRemoteRef("origin/main", [])).toBeNull();
+  });
+});
+
+describe("GitWorktree.getRemotes + fetchRemote", () => {
+  let testDir = "";
+  let remoteDir = "";
+
+  beforeEach(async () => {
+    const result = await createTempRepoWithRemote("copse-fetch-");
+    testDir = result.repoPath;
+    remoteDir = result.remotePath;
+  });
+
+  afterEach(() => {
+    invalidateGitCache();
+    cleanupTempDirs();
+  });
+
+  it("getRemotes() returns origin for a repo with one remote", async () => {
+    const remotes = await GitWorktree.getRemotes(testDir);
+    expect(remotes).toEqual(["origin"]);
+  });
+
+  it("getRemotes() returns all configured remotes", async () => {
+    const secondRemote = createTempDir("copse-second-remote-");
+    await runGit(["init", "--bare"], secondRemote);
+    await runGit(["remote", "add", "upstream", secondRemote], testDir);
+    invalidateGitCache();
+
+    const remotes = await GitWorktree.getRemotes(testDir);
+    expect(remotes).toContain("origin");
+    expect(remotes).toContain("upstream");
+    expect(remotes).toHaveLength(2);
+  });
+
+  it("getRemotes() returns empty array for repo with no remotes", async () => {
+    const noRemoteRepo = await createTempRepo("copse-no-remote-");
+    const remotes = await GitWorktree.getRemotes(noRemoteRepo);
+    expect(remotes).toEqual([]);
+  });
+
+  it("fetchRemote() succeeds for a valid remote/branch", async () => {
+    const consumerRepo = await createTempRepo("copse-consumer-");
+    await runGit(["remote", "add", "origin", remoteDir], consumerRepo);
+
+    await GitWorktree.fetchRemote("origin", "main", consumerRepo);
+
+    const exists = await GitWorktree.remoteBranchExists("main", "origin", consumerRepo);
+    expect(exists).toBeTrue();
+  });
+
+  it("fetchRemote() picks up new commits from the remote", async () => {
+    const consumerRepo = await createTempRepo("copse-consumer2-");
+    await runGit(["remote", "add", "origin", remoteDir], consumerRepo);
+    await GitWorktree.fetchRemote("origin", "main", consumerRepo);
+
+    writeFileSync(join(testDir, "new-file.txt"), "new content\n");
+    await runGit(["add", "new-file.txt"], testDir);
+    await runGit(["commit", "-m", "add new file"], testDir);
+    await runGit(["push", "origin", "main"], testDir);
+
+    const beforeSha = await (GitWorktree as any).run(
+      ["rev-parse", "refs/remotes/origin/main"],
+      consumerRepo,
+    );
+
+    await GitWorktree.fetchRemote("origin", "main", consumerRepo);
+
+    const afterSha = await (GitWorktree as any).run(
+      ["rev-parse", "refs/remotes/origin/main"],
+      consumerRepo,
+    );
+    expect(afterSha).not.toBe(beforeSha);
+  });
+
+  it("fetchRemote() throws GitError for unknown remote", async () => {
+    await expect(
+      GitWorktree.fetchRemote("does-not-exist", "main", testDir),
+    ).rejects.toBeInstanceOf(GitError);
+  });
+
+  it("fetchRemote() without ref argument fetches all branches from remote", async () => {
+    await runGit(["checkout", "-b", "feature/x"], testDir);
+    writeFileSync(join(testDir, "x.txt"), "x\n");
+    await runGit(["add", "x.txt"], testDir);
+    await runGit(["commit", "-m", "x"], testDir);
+    await runGit(["push", "origin", "feature/x"], testDir);
+    await runGit(["checkout", "main"], testDir);
+
+    const consumerRepo = await createTempRepo("copse-consumer3-");
+    await runGit(["remote", "add", "origin", remoteDir], consumerRepo);
+
+    await GitWorktree.fetchRemote("origin", undefined, consumerRepo);
+
+    expect(await GitWorktree.remoteBranchExists("main", "origin", consumerRepo)).toBeTrue();
+    expect(await GitWorktree.remoteBranchExists("feature/x", "origin", consumerRepo)).toBeTrue();
   });
 });

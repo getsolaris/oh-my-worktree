@@ -219,6 +219,48 @@ describe("getRepoConfig - autoUpstream", () => {
   });
 });
 
+describe("getRepoConfig - base", () => {
+  it("base is undefined when not set anywhere", () => {
+    const config: OmlConfig = { version: 1, repos: [{ path: "/tmp/repo" }] };
+
+    expect(getRepoConfig(config, "/tmp/repo").base).toBeUndefined();
+  });
+
+  it("defaults.base is inherited when repo does not override", () => {
+    const config: OmlConfig = {
+      version: 1,
+      defaults: { base: "origin/main" },
+      repos: [{ path: "/tmp/repo" }],
+    };
+
+    expect(getRepoConfig(config, "/tmp/repo").base).toBe("origin/main");
+  });
+
+  it("repo.base overrides defaults.base", () => {
+    const config: OmlConfig = {
+      version: 1,
+      defaults: { base: "origin/main" },
+      repos: [{ path: "/tmp/repo", base: "origin/develop" }],
+    };
+
+    expect(getRepoConfig(config, "/tmp/repo").base).toBe("origin/develop");
+  });
+
+  it("rejects non-string base with validation error", () => {
+    const errors = validateConfig({
+      version: 1,
+      defaults: { base: 42 },
+    });
+    expect(errors.some((e) => e.field === "defaults.base")).toBeTrue();
+
+    const repoErrors = validateConfig({
+      version: 1,
+      repos: [{ path: "/tmp/r", base: 42 }],
+    });
+    expect(repoErrors.some((e) => e.field === "repos[0].base")).toBeTrue();
+  });
+});
+
 describe("expandTemplate", () => {
   it("replaces {repo} and {branch}", () => {
     const result = expandTemplate("../{repo}-{branch}", {

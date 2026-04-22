@@ -19,6 +19,7 @@ copse add <branch> [path]
 | `--pr` | | Create worktree from a GitHub PR number (requires `gh` CLI) |
 | `--session` | `-s` | Create a tmux session for this worktree |
 | `--layout` | | Session layout name from config |
+| `--no-fetch` | | Skip auto-fetch when `--base` is a remote ref (e.g. `origin/main`) |
 
 ## Examples
 
@@ -39,6 +40,37 @@ copse add feature/auth
 ```bash
 copse add feature/api --base develop
 ```
+
+### Create a new branch from a fresh remote ref (auto-fetch)
+
+```bash
+# copse runs `git fetch origin main` first, then branches from origin/main
+copse add feature/api --base origin/main
+```
+
+When `--base` matches the pattern `<remote>/<branch>` and `<remote>` is a known git remote,
+`copse add` automatically runs `git fetch <remote> <branch>` before creating the worktree. This
+avoids accidentally branching from a stale local copy of a remote-tracking ref.
+
+Pass `--no-fetch` to skip the auto-fetch (useful offline):
+
+```bash
+copse add feature/api --base origin/main --no-fetch
+```
+
+You can make this the default for a repo or workspace by setting `defaults.base` in config:
+
+```json
+{
+  "version": 1,
+  "defaults": {
+    "base": "origin/main"
+  }
+}
+```
+
+With `defaults.base` set, running `copse add feature/x` (no `--base` flag) will auto-fetch
+`origin/main` and branch from it.
 
 ### Specify a custom path for the worktree
 

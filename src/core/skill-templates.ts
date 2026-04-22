@@ -95,9 +95,11 @@ const referenceSpecs: ReferenceSpec[] = [
       { flag: "--pr", type: "number", alias: "-", description: "Create worktree from a GitHub PR number" },
       { flag: "--session", type: "boolean", alias: "-s", description: "Create a tmux session for this worktree" },
       { flag: "--layout", type: "string", alias: "-", description: "Session layout name from config" },
+      { flag: "--no-fetch", type: "boolean", alias: "-", description: "Skip auto-fetch when base is a remote ref (e.g. origin/main)" },
     ],
     examples: [
       ["Create a feature branch worktree", "copse add feature/auth --base main"],
+      ["Branch from fresh remote ref (auto-fetch)", "copse add feature/auth --base origin/main"],
       ["Create from PR with session layout", "copse add feature/review --pr 123 --session --layout dev"],
     ],
     notes: [
@@ -107,6 +109,8 @@ const referenceSpecs: ReferenceSpec[] = [
       "Rolls back on hook failure.",
       "Requires gh CLI for --pr.",
       "Supports comma/space separated focus paths.",
+      "When --base matches '<remote>/<branch>' and <remote> is a known git remote, copse runs `git fetch <remote> <branch>` first (disable with --no-fetch).",
+      "Base resolution order: --base flag > template.base > repoConfig.base > defaults.base > git HEAD.",
     ],
     configKeys: [
       "`defaults.worktreeDir` — Directory pattern for new worktrees",
@@ -115,6 +119,7 @@ const referenceSpecs: ReferenceSpec[] = [
       "`defaults.sharedDeps` — Shared dependency strategy and paths",
       "`defaults.postCreate` — Hooks to run after worktree creation",
       "`defaults.autoUpstream` — Auto-set upstream tracking branch",
+      "`defaults.base` — Default base ref for new branches (e.g. `origin/main` triggers auto-fetch)",
       "`templates.*` — Named template overrides",
       "`sessions.autoCreate` — Auto-create tmux session on add",
       "`sessions.layouts` — Tmux session layout definitions",
@@ -804,6 +809,7 @@ function generateConfigSchemaContent(): string {
     "| `postCreate` | string[] | `[]` | Shell commands to run after worktree creation |",
     "| `postRemove` | string[] | `[]` | Shell commands to run before worktree removal |",
     "| `autoUpstream` | boolean | `false` | Automatically set upstream tracking branch |",
+    "| `base` | string | - | Default base ref for new branches. If it matches `<remote>/<branch>` of a known remote (e.g. `origin/main`), `copse add` auto-runs `git fetch <remote> <branch>` first |",
     "| `sharedDeps.strategy` | string | `symlink` | Strategy for sharing deps: `symlink`, `hardlink`, or `copy` |",
     "| `sharedDeps.paths` | string[] | `[]` | Paths to share between worktrees |",
     "",

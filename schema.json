@@ -45,6 +45,10 @@
         },
         "sharedDeps": {
           "$ref": "#/definitions/sharedDeps"
+        },
+        "base": {
+          "type": "string",
+          "description": "Default base ref for new branches. If it matches a known remote (e.g. \"origin/main\"), copse runs `git fetch <remote> <branch>` before creating the worktree. Overridable per template or per CLI flag."
         }
       }
     },
@@ -146,7 +150,8 @@
               "postCreate": { "type": "array", "items": { "type": "string" } },
               "postRemove": { "type": "array", "items": { "type": "string" } },
               "autoUpstream": { "type": "boolean" },
-              "sharedDeps": { "$ref": "#/definitions/sharedDeps" }
+              "sharedDeps": { "$ref": "#/definitions/sharedDeps" },
+              "base": { "type": "string" }
             }
           }
         }
@@ -167,6 +172,7 @@
           "postRemove": { "type": "array", "items": { "type": "string" } },
           "autoUpstream": { "type": "boolean" },
           "sharedDeps": { "$ref": "#/definitions/sharedDeps" },
+          "base": { "type": "string" },
           "monorepo": {
             "type": "object",
             "additionalProperties": false,

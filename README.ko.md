@@ -282,6 +282,8 @@ copse init --skill claude-code
 ```bash
 copse add feature/login                        # 필요하면 브랜치를 만들고 worktree 생성
 copse add feature/login --base main            # 새 브랜치는 main에서 시작
+copse add feature/login --base origin/main     # origin/main 을 자동 fetch 후 분기 (아래 참고)
+copse add feature/login --base origin/main --no-fetch  # 자동 fetch 건너뛰기
 copse add existing-branch                      # 기존 브랜치로 worktree 생성
 
 # 모노레포: 포커스 패키지와 함께 생성
@@ -295,6 +297,33 @@ copse add feature/login --template review
 copse add --pr 123
 copse add --pr 456 --template review
 ```
+
+#### Remote 인식 base + 자동 fetch
+
+`--base` (또는 config 의 `defaults.base`) 값이 `<remote>/<branch>` 패턴이고 `<remote>` 가 실제로 등록된
+git remote 이면, `copse add` 는 worktree 를 만들기 전에 `git fetch <remote> <branch>` 를 먼저 실행합니다.
+stale 한 remote-tracking ref 에서 실수로 분기하는 걸 막아줍니다.
+
+- `--base main`, `--base develop`, `--base HEAD`, `--base <sha>` → fetch 없음 (local ref).
+- `--base origin/main`, `--base upstream/release/v2` → 해당 브랜치만 fetch 후 분기.
+- `--base fork/main` 인데 `fork` 가 등록된 remote 가 아님 → local ref 로 취급 (fetch 없음).
+- Fetch 실패 (오프라인, 인증 오류 등) 시 경고만 출력하고 local copy 로 계속 진행합니다.
+- 대상 브랜치가 이미 로컬에 존재하면 자동 fetch 는 건너뜁니다 (`--base` 는 새 브랜치에만 의미).
+
+`--no-fetch` 로 자동 fetch 를 강제로 건너뛸 수 있습니다. 매번 `copse add` 에서 remote-aware base 를
+기본으로 하고 싶으면 `defaults.base` 를 설정하세요:
+
+```json
+{
+  "version": 1,
+  "defaults": {
+    "base": "origin/main"
+  }
+}
+```
+
+Base 우선순위 (높은 쪽이 이김): `--base` 플래그 → `template.base` → repo 별 `repos[].base` →
+`defaults.base` → git `HEAD`.
 
 ### `copse doctor`
 
@@ -656,6 +685,7 @@ copse: created default config at /Users/you/.config/copse/config.json
 | `linkFiles` | `string[]` | `[]` | 심볼릭 링크할 파일/디렉토리 (디스크 절약) |
 | `postCreate` | `string[]` | `[]` | worktree 생성 후 실행할 커맨드 |
 | `postRemove` | `string[]` | `[]` | worktree 제거 전 실행할 커맨드 |
+| `base` | `string` | — | 새 브랜치의 기본 base ref. 값이 등록된 remote 의 `<remote>/<branch>` 형태이면 `copse add` 가 `git fetch <remote> <branch>` 를 자동 실행 |
 
 #### `repos[]`
 
@@ -669,6 +699,7 @@ copse: created default config at /Users/you/.config/copse/config.json
 | `linkFiles` | `string[]` | 아니오 | 기본 링크 파일 오버라이드 |
 | `postCreate` | `string[]` | 아니오 | 기본 postCreate 훅 오버라이드 |
 | `postRemove` | `string[]` | 아니오 | 기본 postRemove 훅 오버라이드 |
+| `base` | `string` | 아니오 | 기본 base ref 오버라이드 |
 | `monorepo` | `object` | 아니오 | 모노레포 지원 설정 |
 
 #### `workspaces[]`
